@@ -144,7 +144,6 @@ export const Navbar = () => {
               ) : (
                 <div className="hidden sm:flex items-center gap-1">
                   <Link href="/login" className="text-[10px] font-bold uppercase tracking-widest text-primary px-3 py-2 hover:bg-sand rounded-full">Login</Link>
-                  <Link href="/signup" className="text-[10px] font-bold uppercase tracking-widest text-accent px-3 py-2 hover:bg-sand rounded-full italic">Registro</Link>
                 </div>
               )}
 
