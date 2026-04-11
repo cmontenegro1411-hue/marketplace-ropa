@@ -4,11 +4,13 @@ import React, { useState } from 'react';
 import { Container } from '@/components/ui/Container';
 import { Navbar } from '@/components/ui/Navbar';
 import { useCart } from '@/context/CartContext';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { completePurchase } from '@/app/actions/product-actions';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
+  const { data: session } = useSession();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,19 +64,28 @@ export default function CheckoutPage() {
             Pago simulado · Sin pasarela real
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/search"
-              className="px-8 py-3 bg-primary text-cream rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-md"
-            >
-              Seguir Comprando
-            </Link>
-            <Link
-              href="/profile"
-              className="px-8 py-3 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all"
-            >
-              Ver Mi Closet
-            </Link>
-          </div>
+              <Link
+                href="/search"
+                className="px-8 py-3 bg-primary text-cream rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-md"
+              >
+                Seguir Comprando
+              </Link>
+              {session ? (
+                <Link
+                  href="/profile"
+                  className="px-8 py-3 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all"
+                >
+                  Ver Mi Closet
+                </Link>
+              ) : (
+                <Link
+                  href="/"
+                  className="px-8 py-3 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all"
+                >
+                  Ir al Inicio
+                </Link>
+              )}
+            </div>
         </div>
       </div>
     );
