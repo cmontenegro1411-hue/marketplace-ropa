@@ -128,11 +128,32 @@ export async function completePurchase(productIds: string[]) {
       return { success: false, error: "No hay productos en el carrito." };
     }
 
-    // Marcar cada producto como vendido
+    // CAPA DE SEGURIDAD: Verificar que TODOS los productos aún estén disponibles
+    const { data: products, error: checkError } = await supabase
+      .from('products')
+      .select('id, title, status')
+      .in('id', productIds);
+
+    if (checkError) {
+      return { success: false, error: "Error verificando disponibilidad de productos." };
+    }
+
+    const alreadySold = products?.filter(p => p.status === 'sold') || [];
+    if (alreadySold.length > 0) {
+      const names = alreadySold.map(p => p.title).join(', ');
+      return { 
+        success: false, 
+        error: `Los siguientes productos ya fueron vendidos: ${names}. Por favor retíralos del carrito.`
+      };
+    }
+
+    // Solo actualizar los que están disponibles (doble check)
+    const availableIds = products?.filter(p => p.status !== 'sold').map(p => p.id) || [];
+
     const { error } = await supabase
       .from('products')
       .update({ status: 'sold' })
-      .in('id', productIds);
+      .in('id', availableIds);
 
     if (error) {
       console.error("Error marcando productos como vendidos:", error);
@@ -144,12 +165,11 @@ export async function completePurchase(productIds: string[]) {
     revalidatePath('/search');
     revalidatePath('/profile');
     revalidatePath('/profile/settings');
-    // Revalidar cada página de producto individualmente
-    for (const id of productIds) {
+    for (const id of availableIds) {
       revalidatePath(`/product/${id}`);
     }
 
-    return { success: true, soldCount: productIds.length };
+    return { success: true, soldCount: availableIds.length };
   } catch (error: any) {
     console.error("completePurchase Error:", error);
     return { success: false, error: error.message || "Error inesperado" };
