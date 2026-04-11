@@ -1,22 +1,39 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Container } from "@/components/ui/Container";
 import { Navbar } from "@/components/ui/Navbar";
 import Link from 'next/link';
+import { supabase } from "@/lib/supabase";
+import { auth } from "@/auth";
+import { redirect } from 'next/navigation';
 
-// Datos de simulación para los reportes de ventas
-const mockSalesData = [
-  { id: 'ORD-001', date: '2023-11-20', item: 'Casaca Denim Vintage', price: 120.00, status: 'Completado', image: 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=200' },
-  { id: 'ORD-002', date: '2023-11-15', item: 'Vestido Floral Zara', price: 85.00, status: 'En Tránsito', image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?q=80&w=200' },
-  { id: 'ORD-003', date: '2023-10-30', item: 'Zapatillas Converse High', price: 150.00, status: 'Completado', image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=200' },
-];
+export default async function SettingsAndReportsPage(props: { searchParams: Promise<{ tab?: string }> }) {
+  const session = await auth();
+  
+  if (!session?.user) {
+    redirect('/login');
+  }
 
-export default function SettingsAndReportsPage() {
-  const [activeTab, setActiveTab] = useState<'reports' | 'security' | 'payments'>('reports');
+  // Next.js 15 Promise resolution for searchParams
+  const searchParams = await props.searchParams;
+  const activeTab = searchParams.tab || 'reports';
 
-  const totalEarnings = mockSalesData.reduce((acc, curr) => acc + curr.price, 0);
-  const totalItemsSold = mockSalesData.length;
+  // Fetch real data from DB
+  const { data: myProducts, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('seller_id', session.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) console.error("Error fetching for reports:", error);
+
+  const soldProducts = myProducts?.filter(p => p.status === 'sold') || [];
+  const totalEarnings = soldProducts.reduce((acc, curr) => acc + (curr.price || 0), 0);
+  const totalItemsSold = soldProducts.length;
+  const totalPublished = myProducts?.length || 0;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 }).format(amount);
+  };
 
   return (
     <div className="min-h-screen bg-sand/30 pb-20">
@@ -36,26 +53,26 @@ export default function SettingsAndReportsPage() {
           </div>
         </header>
 
-        {/* Custom Tabs */}
-        <div className="flex gap-4 border-b border-sand mb-8 overflow-x-auto overflow-y-hidden pb-1 scrollbar-hide">
-          <button 
-            onClick={() => setActiveTab('reports')}
+        {/* Custom Server-driven Tabs */}
+        <div className="flex gap-8 border-b border-sand mb-8 overflow-x-auto overflow-y-hidden pb-1 scrollbar-hide">
+          <Link 
+            href="/profile/settings?tab=reports"
             className={`whitespace-nowrap pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'reports' ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-primary'}`}
           >
             Reporte de Ventas
-          </button>
-          <button 
-            onClick={() => setActiveTab('payments')}
+          </Link>
+          <Link 
+            href="/profile/settings?tab=payments"
             className={`whitespace-nowrap pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'payments' ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-primary'}`}
           >
             Métodos de Cobro
-          </button>
-          <button 
-            onClick={() => setActiveTab('security')}
+          </Link>
+          <Link 
+            href="/profile/settings?tab=security"
             className={`whitespace-nowrap pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'security' ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-primary'}`}
           >
             Seguridad & Alertas
-          </button>
+          </Link>
         </div>
 
         {/* Tab Content */}
@@ -75,23 +92,23 @@ export default function SettingsAndReportsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Total Ingresos</p>
-                  <p className="text-4xl font-serif font-bold text-primary">S/ {totalEarnings.toFixed(2)}</p>
+                  <p className="text-4xl font-serif font-bold text-primary">{formatCurrency(totalEarnings)}</p>
                   <p className="text-xs text-green-600 font-bold mt-2 flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
-                    +12% este mes
+                    Histórico
                   </p>
                 </div>
                 
                 <div className="p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Prendas Vendidas</p>
                   <p className="text-4xl font-serif font-bold text-primary">{totalItemsSold}</p>
-                  <p className="text-xs text-muted mt-2">De 15 publicadas</p>
+                  <p className="text-xs text-muted mt-2">De {totalPublished} publicadas</p>
                 </div>
 
-                <div className="p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow opacity-60">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Próximo Pago</p>
-                  <p className="text-3xl font-serif font-bold text-secondary mt-1">S/ 85.00</p>
-                  <p className="text-xs text-muted mt-2">Estimado: Viernes 24</p>
+                  <p className="text-3xl font-serif font-bold text-secondary mt-1">S/ 0</p>
+                  <p className="text-xs text-muted mt-2">No hay pagos en tránsito</p>
                 </div>
               </div>
 
@@ -100,28 +117,34 @@ export default function SettingsAndReportsPage() {
                 <h3 className="text-lg font-serif font-bold text-primary border-b border-sand pb-4 mb-6">Historial de Prendas Vendidas</h3>
                 
                 <div className="space-y-4">
-                  {mockSalesData.map((order) => (
-                    <div key={order.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 hover:bg-sand/20 rounded-2xl transition-colors border border-transparent hover:border-sand/50">
-                      <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                        <img src={order.image} alt={order.item} className="w-16 h-16 rounded-xl object-cover bg-sand shadow-sm" />
-                        <div>
-                          <p className="font-bold text-primary">{order.item}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] uppercase tracking-widest text-muted">ID: {order.id}</span>
-                            <span className="text-muted">•</span>
-                            <span className="text-[10px] uppercase tracking-widest text-muted">{order.date}</span>
+                  {soldProducts.length === 0 ? (
+                     <div className="py-12 text-center border-2 border-dashed border-sand rounded-3xl">
+                       <p className="text-muted italic">No tienes historial de ventas aún.</p>
+                     </div>
+                  ) : (
+                    soldProducts.map((order) => (
+                      <div key={order.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 hover:bg-sand/20 rounded-2xl transition-colors border border-transparent hover:border-sand/50">
+                        <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                          <img src={order.images?.[0] || '/placeholder-product.png'} alt={order.title} className="w-16 h-16 rounded-xl object-cover bg-sand shadow-sm" />
+                          <div>
+                            <p className="font-bold text-primary">{order.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] uppercase tracking-widest text-muted">ID: {order.id.slice(0, 8)}</span>
+                              <span className="text-muted">•</span>
+                              <span className="text-[10px] uppercase tracking-widest text-accent">{order.brand}</span>
+                            </div>
                           </div>
                         </div>
+                        
+                        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
+                          <span className="text-lg font-serif font-bold text-primary">{formatCurrency(order.price)}</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-green-100 text-green-700`}>
+                            COMPLETADO
+                          </span>
+                        </div>
                       </div>
-                      
-                      <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
-                        <span className="text-lg font-serif font-bold text-primary">S/ {order.price.toFixed(2)}</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${order.status === 'Completado' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                          {order.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>
