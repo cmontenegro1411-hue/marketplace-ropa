@@ -95,6 +95,7 @@ export default async function ProfilePage() {
                   condition={product.condition}
                   size={product.size}
                   imageUrl={product.images?.[0]}
+                  status={product.status}
                 />
                 {/* Actions Overlay */}
                 <EditListingLink productId={product.id} />

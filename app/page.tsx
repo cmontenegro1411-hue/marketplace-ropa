@@ -97,6 +97,7 @@ export default async function Home() {
                     condition={p.condition}
                     size={p.size}
                     imageUrl={p.images?.[0] || '/placeholder-product.png'}
+                    status={p.status}
                   />
                 ))}
               </div>

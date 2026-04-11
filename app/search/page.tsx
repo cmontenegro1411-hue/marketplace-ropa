@@ -30,11 +30,6 @@ export default async function SearchPage({
   // 2. Construcción de Query Segura
   let dbQuery = supabase.from('products').select('*');
 
-  // Solo filtramos por estado si la columna existe
-  if (hasStatus) {
-    dbQuery = dbQuery.eq('status', 'available');
-  }
-
   // Filtros dinámicos de Categoría
   if (category) {
     if (hasCategorySingular) {
@@ -64,6 +59,7 @@ export default async function SearchPage({
     dbQuery = dbQuery.or(orFilters);
   }
 
+  // Idealmente, se colocaría en primer lugar lo más reciente, pero podrías ordenar los 'available' primero si construyes una View.
   const { data: products, error } = await dbQuery.order('created_at', { ascending: false });
 
   if (error) {
@@ -91,7 +87,7 @@ export default async function SearchPage({
 
           <div className="space-y-10">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted border-b border-sand pb-4">
-              <span>{products?.length || 0} prendas disponibles</span>
+              <span>{products?.length || 0} prendas en el mercado</span>
             </div>
 
             {products && products.length > 0 ? (
@@ -106,6 +102,7 @@ export default async function SearchPage({
                     condition={p.condition}
                     size={p.size}
                     imageUrl={p.images?.[0] || '/placeholder-product.png'}
+                    status={p.status}
                   />
                 ))}
               </div>
