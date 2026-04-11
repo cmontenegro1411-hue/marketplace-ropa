@@ -63,15 +63,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isProtected = nextUrl.pathname.startsWith("/dashboard") || nextUrl.pathname.startsWith("/profile");
-      
-      if (isProtected) {
-        if (isLoggedIn) return true;
-        return false; // Redirige a signIn (que es /login según nuestra configuración 'pages')
-      }
-      return true;
-    },
   },
 });
