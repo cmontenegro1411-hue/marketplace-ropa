@@ -50,17 +50,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
     maxAge: 60 * 60, // 1 hora de inactividad como máximo
   },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
   callbacks: {
     jwt({ token, user }) {
       if (user) {
@@ -76,10 +65,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
-      if (isOnDashboard) {
+      const isProtected = nextUrl.pathname.startsWith("/dashboard") || nextUrl.pathname.startsWith("/profile");
+      
+      if (isProtected) {
         if (isLoggedIn) return true;
-        return false; 
+        return false; // Redirige a signIn (que es /login según nuestra configuración 'pages')
       }
       return true;
     },
