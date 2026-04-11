@@ -117,3 +117,41 @@ export async function updateListing(productId: string, formData: any) {
     return { success: false, error: error.message || "Error inesperado" };
   }
 }
+
+/**
+ * Marca todos los productos del carrito como 'sold' en Supabase.
+ * Se llama desde el checkout al confirmar la compra ficticia.
+ */
+export async function completePurchase(productIds: string[]) {
+  try {
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: "No hay productos en el carrito." };
+    }
+
+    // Marcar cada producto como vendido
+    const { error } = await supabase
+      .from('products')
+      .update({ status: 'sold' })
+      .in('id', productIds);
+
+    if (error) {
+      console.error("Error marcando productos como vendidos:", error);
+      return { success: false, error: error.message };
+    }
+
+    // Revalidar todas las páginas que muestran productos
+    revalidatePath('/');
+    revalidatePath('/search');
+    revalidatePath('/profile');
+    revalidatePath('/profile/settings');
+    // Revalidar cada página de producto individualmente
+    for (const id of productIds) {
+      revalidatePath(`/product/${id}`);
+    }
+
+    return { success: true, soldCount: productIds.length };
+  } catch (error: any) {
+    console.error("completePurchase Error:", error);
+    return { success: false, error: error.message || "Error inesperado" };
+  }
+}
