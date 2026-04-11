@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  /* Quiet Luxury Palette */
+  --background: #FCFBF7;   /* Oyster White / Bone */
+  --foreground: #1A1A1A;   /* Soft Charcoal */
+  --primary: #2D2D2D;      /* Deep Graphite */
+  --secondary: #6B6B6B;    /* Muted Slate */
+  --accent: #C5A059;       /* Sand Gold (Subtle) */
+  --sand: #F2EFE9;         /* Light Linen */
+  --cream: #FAF9F6;        /* Smooth Cream */
+  --white: #FFFFFF;
+  
+  --radius-small: 8px;
+  --radius-medium: 16px;
+  --radius-large: 32px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-sand: var(--sand);
+  --color-cream: var(--cream);
+
+  --font-serif: var(--font-playfair), serif;
+  --font-sans: var(--font-outfit), sans-serif;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  
+  --animate-subtle-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-outfit), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-playfair), serif;
+  font-weight: 700;
+}
+
+.glass {
+  background: rgba(252, 251, 247, 0.75);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.editorial-shadow {
+  box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.06);
+}
+
+.card-hover {
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.12);
+}

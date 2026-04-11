@@ -1,0 +1,92 @@
+import { createClient } from '@supabase/supabase-js';
+
+const SELLER_ID = "00000000-0000-0000-0000-000000000000";
+
+const dummyProducts = [
+  {
+    title: "Vestido Midi Floral Vintage",
+    description: "Vestido de seda con estampado botánico, perfecto para eventos de tarde. Corte impecable.",
+    price: 185,
+    brand: "Zara Premium",
+    category: "Mujer",
+    condition: "Como Nuevo",
+    size: "M",
+    seller_id: SELLER_ID,
+    images: ["https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&q=80&w=800"]
+  },
+  {
+    title: "Chaqueta de Cuero Biker",
+    description: "Cuero auténtico de alta calidad. Estilo icónico con herrajes plateados.",
+    price: 490,
+    brand: "Diesel",
+    category: "Hombre",
+    condition: "Excelente",
+    size: "L",
+    seller_id: SELLER_ID,
+    images: ["https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=800"]
+  },
+  {
+    title: "Blazer Lana Virgen Crema",
+    description: "Chaqueta estructurada de color crema. Estilo minimalista y sofisticado.",
+    price: 220,
+    brand: "Massimo Dutti",
+    category: "Mujer",
+    condition: "Excelente",
+    size: "S",
+    seller_id: SELLER_ID,
+    images: ["https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=800"]
+  },
+  {
+    title: "Bolso de Piel Acolchado",
+    description: "Bolso de hombro en color negro con detalles dorados. Piel legítima ultra suave.",
+    price: 350,
+    brand: "Purificación García",
+    category: "Mujer",
+    condition: "Como Nuevo",
+    size: "Única",
+    seller_id: SELLER_ID,
+    images: ["https://images.unsplash.com/photo-1566150905458-1bf1fd11394a?auto=format&fit=crop&q=80&w=800"]
+  },
+  {
+    title: "Reloj Minimalista Classic",
+    description: "Correa de cuero café y esfera blanca minimalista. Un accesorio esencial.",
+    price: 180,
+    brand: "Daniel Wellington",
+    category: "Hombre",
+    condition: "Excelente",
+    size: "Única",
+    seller_id: SELLER_ID,
+    images: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800"]
+  },
+  {
+    title: "Gafas de Sol Carey Wayfarer",
+    description: "Montura clásica estilo wayfarer en color carey. Lentes con protección UV.",
+    price: 290,
+    brand: "Ray-Ban",
+    category: "Accesorios",
+    condition: "Como Nuevo",
+    size: "Única",
+    seller_id: SELLER_ID,
+    images: ["https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&q=80&w=800"]
+  }
+];
+
+async function seed() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = createClient(url, key);
+
+  console.log("🧹 Limpiando catálogo...");
+  await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+  console.log("🚀 Inyectando catálogo final y estable...");
+  const { error } = await supabase.from('products').insert(dummyProducts);
+  
+  if (error) {
+    console.error("❌ Error:", error.message);
+  } else {
+    console.log("✅ ¡Catálogo actualizado con éxito!");
+  }
+}
+
+seed();
