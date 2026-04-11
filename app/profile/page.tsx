@@ -27,6 +27,16 @@ export default async function ProfilePage() {
 
   const userName = session.user.name || "Usuario";
 
+  // Calcular estadísticas dinámicas reales
+  const activeProducts = myProducts?.filter(p => !p.status || p.status === 'available') || [];
+  const soldProducts = myProducts?.filter(p => p.status === 'sold') || [];
+  const totalSalesValue = soldProducts.reduce((sum, p) => sum + (p.price || 0), 0);
+  const totalActiveValue = activeProducts.reduce((sum, p) => sum + (p.price || 0), 0);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 }).format(amount);
+  };
+
   return (
     <main className="min-h-screen bg-cream pb-20">
       <Navbar />
@@ -52,16 +62,17 @@ export default async function ProfilePage() {
       <Container className="py-12">
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Publicaciones</p>
-            <p className="text-4xl font-serif font-bold text-primary">{myProducts?.length || 0}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Publicaciones Activas</p>
+            <p className="text-4xl font-serif font-bold text-primary">{activeProducts.length}</p>
+            <p className="text-[10px] text-muted mt-2 font-medium">Inventario: {formatCurrency(totalActiveValue)}</p>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Artículos Vendidos</p>
-            <p className="text-4xl font-serif font-bold text-secondary">0</p>
+            <p className="text-4xl font-serif font-bold text-secondary">{soldProducts.length}</p>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Valor Total</p>
-            <p className="text-4xl font-serif font-bold text-accent">--</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Total Ganado en Ventas</p>
+            <p className="text-4xl font-serif font-bold text-accent">{formatCurrency(totalSalesValue)}</p>
           </div>
         </div>
 
