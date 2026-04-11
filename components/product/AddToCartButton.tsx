@@ -39,13 +39,30 @@ export const AddToCartButton = ({ product }: AddToCartButtonProps) => {
     }, 400);
   };
 
-  // Estado: VENDIDO — bloqueo total
+  // Estado: VENDIDO — bloqueo total con diseño premium
   if (isSold) {
     return (
-      <div className="w-full py-5 rounded-full bg-sand border-2 border-sand text-center cursor-not-allowed">
-        <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-muted">
-          Este producto ya fue vendido
-        </span>
+      <div className="w-full space-y-3">
+        {/* Banner principal */}
+        <div className="w-full flex items-center justify-center gap-3 py-5 px-6 rounded-2xl bg-secondary/10 border-2 border-secondary/30">
+          {/* Icono de candado */}
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-secondary shrink-0">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <div className="text-left">
+            <p className="text-sm font-bold text-secondary tracking-tight">Esta prenda ya encontró dueño</p>
+            <p className="text-[10px] text-secondary/70 font-medium uppercase tracking-widest">Producto no disponible</p>
+          </div>
+        </div>
+        {/* Sugerencia de acción */}
+        <a
+          href="/search"
+          className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl border border-sand text-[10px] font-bold uppercase tracking-widest text-muted hover:text-primary hover:border-primary/30 hover:bg-cream transition-all duration-300"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Ver prendas similares
+        </a>
       </div>
     );
   }
