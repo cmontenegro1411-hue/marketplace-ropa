@@ -18,6 +18,7 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    buyer_phone: '',
     address: '',
   });
 
@@ -30,8 +31,8 @@ export default function CheckoutPage() {
       // Obtenemos los IDs de todos los productos en el carrito
       const productIds = cart.map(item => item.id);
 
-      // *** LA ACCIÓN REAL: Actualiza status='sold' en Supabase ***
-      const result = await completePurchase(productIds);
+      // *** LA ACCIÓN REAL: Actualiza status='sold' + comprador en Supabase ***
+      const result = await completePurchase(productIds, formData);
 
       if (!result.success) {
         setError(result.error || 'Error al procesar la compra.');
@@ -162,7 +163,18 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Email para recibo</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Tu número de WhatsApp</label>
+                    <input
+                      required
+                      type="tel"
+                      placeholder="Ej. 999888777"
+                      className="w-full bg-cream/30 border border-sand rounded-2xl py-3 px-4 focus:ring-1 focus:ring-primary outline-none"
+                      value={formData.buyer_phone}
+                      onChange={(e) => setFormData({...formData, buyer_phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Email para notificaciones</label>
                     <input
                       required
                       type="email"

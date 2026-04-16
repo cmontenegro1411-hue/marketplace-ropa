@@ -122,7 +122,7 @@ export async function updateListing(productId: string, formData: any) {
  * Marca todos los productos del carrito como 'sold' en Supabase.
  * Se llama desde el checkout al confirmar la compra ficticia.
  */
-export async function completePurchase(productIds: string[]) {
+export async function completePurchase(productIds: string[], formData: any) {
   try {
     if (!productIds || productIds.length === 0) {
       return { success: false, error: "No hay productos en el carrito." };
@@ -152,7 +152,12 @@ export async function completePurchase(productIds: string[]) {
 
     const { error } = await supabase
       .from('products')
-      .update({ status: 'sold' })
+      .update({ 
+        status: 'sold',
+        buyer_name: formData.name,
+        buyer_phone: formData.buyer_phone,
+        buyer_email: formData.email
+      })
       .in('id', availableIds);
 
     if (error) {
