@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import React, { useState } from 'react';
 import { Container } from "@/components/ui/Container";
@@ -43,8 +44,12 @@ export default function CreditsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBF9F6] pt-32 pb-24">
+    <div className="min-h-screen bg-[#FBF9F6] pt-24 pb-24">
       <Container>
+        <Link href="/profile" className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted hover:text-primary transition-colors mb-8">
+           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+           Regresar al Perfil
+        </Link>
         <div className="max-w-2xl mx-auto text-center mb-16">
           <div className="inline-block px-4 py-1.5 border border-accent/20 rounded-full mb-6 bg-white animate-fade-in-up">
              <span className="text-secondary font-bold tracking-[0.5em] uppercase text-[9px]">Automatización Premium</span>
