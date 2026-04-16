@@ -99,12 +99,16 @@ export default function CreditsPage() {
 
         <div className="mt-20 flex flex-col items-center justify-center gap-6">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">Pago 100% Seguro Vía Mercado Pago</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-            <img src="https://cdn.icon-icons.com/icons2/2699/PNG/512/mercadopago_logo_icon_168262.png" alt="Mercado Pago" className="h-6 object-contain" />
-            <img src="https://seeklogo.com/images/Y/yape-logo-3E473EE7E5-seeklogo.com.png" alt="Yape" className="h-8 object-contain" />
-            <img src="https://plazavea.vteximg.com.br/arquivos/Plin-Logo-300x126.png" alt="Plin" className="h-[22px] object-contain" />
-            <img src="https://cdn.icon-icons.com/icons2/2699/PNG/512/visa_logo_icon_168128.png" alt="Visa" className="h-4 object-contain opacity-80" />
-            <img src="https://cdn.icon-icons.com/icons2/2699/PNG/512/mastercard_logo_icon_168102.png" alt="Mastercard" className="h-5 object-contain opacity-80" />
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 opacity-40 hover:opacity-100 transition-all duration-500">
+            <span className="px-3 py-1.5 bg-[#009EE3] text-white text-[11px] tracking-wide font-bold rounded">mercado<span className="font-light">pago</span></span>
+            <span className="px-3 py-1.5 bg-[#742284] text-white text-[11px] tracking-wider font-bold rounded">yape</span>
+            <span className="px-3 py-1.5 bg-black text-[#00E0A6] text-[11px] tracking-wider font-bold rounded">plin</span>
+            <span className="px-3 py-1.5 bg-[#1A1F71] text-white text-[11px] font-bold italic rounded">VISA</span>
+            <span className="px-3 py-1.5 bg-transparent border border-muted text-muted text-[11px] font-bold rounded flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-[#EB001B]"></div>
+              <div className="w-2 h-2 rounded-full bg-[#F79E1B] -ml-1.5"></div>
+              mastercard
+            </span>
           </div>
         </div>
       </Container>
