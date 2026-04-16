@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface CartItem {
   id: string;
@@ -22,36 +23,64 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+/**
+ * Reglas de persistencia del carrito:
+ * - Usuario ANÓNIMO  → sessionStorage  (se borra al cerrar pestaña/browser)
+ * - Usuario LOGUEADO → localStorage con clave scoped al userId
+ *                      (persiste entre visitas, pero aislado por cuenta)
+ */
+function getStorageKey(userId?: string | null): { storage: Storage | null; key: string } {
+  if (typeof window === 'undefined') return { storage: null, key: '' };
+
+  if (userId) {
+    return { storage: window.localStorage, key: `cart_${userId}` };
+  }
+  return { storage: window.sessionStorage, key: 'cart_guest' };
+}
+
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const { data: session, status } = useSession();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
-  // Cargar carrito desde localStorage al iniciar
+  const userId = session?.user?.id ?? null;
+
+  // Cargar carrito cuando la sesión esté lista
   useEffect(() => {
-    const savedCart = localStorage.getItem('modacircular_cart');
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Error loading cart", e);
-      }
+    if (status === 'loading') return; // Esperar a que se resuelva la sesión
+
+    const { storage, key } = getStorageKey(userId);
+    if (!storage) return;
+
+    try {
+      const saved = storage.getItem(key);
+      setCart(saved ? JSON.parse(saved) : []);
+    } catch {
+      setCart([]);
+    } finally {
+      setInitialized(true);
     }
-  }, []);
+  }, [status, userId]);
 
-  // Guardar en localStorage cada vez que cambie
+  // Guardar carrito en el storage correcto cada vez que cambia
   useEffect(() => {
-    localStorage.setItem('modacircular_cart', JSON.stringify(cart));
-  }, [cart]);
+    if (!initialized) return;
+
+    const { storage, key } = getStorageKey(userId);
+    if (!storage) return;
+
+    storage.setItem(key, JSON.stringify(cart));
+  }, [cart, initialized, userId]);
 
   const addToCart = (item: CartItem) => {
-    // En ropa de segunda mano, normalmente solo hay 1 unidad de cada cosa
-    // Evitamos duplicados por si acaso
-    if (!cart.some(i => i.id === item.id)) {
+    // Ropa de segunda mano: solo 1 unidad por prenda
+    if (!cart.some((i) => i.id === item.id)) {
       setCart([...cart, item]);
     }
   };
 
   const removeFromCart = (id: string) => {
-    setCart(cart.filter(item => item.id !== id));
+    setCart(cart.filter((item) => item.id !== id));
   };
 
   const clearCart = () => {

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
+import { CreditsCounter } from '@/components/ai-listing/CreditsCounter';
 
 interface Suggestion {
   id: string;
@@ -135,6 +136,8 @@ export const Navbar = () => {
               </Link>
               
               <div className="h-6 w-px bg-sand mx-1 hidden sm:block"></div>
+
+              {session && <CreditsCounter />}
 
               {session ? (
                 <div className="flex items-center gap-1 md:gap-3">

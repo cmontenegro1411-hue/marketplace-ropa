@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { uploadMultipleImages } from "@/lib/storage";
+import { uploadMultipleImagesViaAPI } from "@/lib/storage";
 import { createListing } from "@/app/actions/product-actions";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -60,7 +60,7 @@ const SellPage = () => {
     
     try {
       // 1. Upload Images
-      const imageUrls = await uploadMultipleImages(images);
+      const imageUrls = await uploadMultipleImagesViaAPI(images);
 
       // 2. Submit Listing
       const result = await createListing({
@@ -105,6 +105,22 @@ const SellPage = () => {
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:-translate-x-1"><path d="m15 18-6-6 6-6"/></svg>
               Volver a Mi Closet
             </Link>
+
+            {/* AI Banner */}
+            <Link
+              href="/dashboard/ai-listing"
+              className="flex items-center gap-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-2xl px-5 py-4 mb-6 hover:border-primary/40 transition-all group"
+            >
+              <span className="text-2xl">✨</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-primary">Usá la IA para completar este formulario</p>
+                <p className="text-xs text-muted">Subí una foto y la IA detecta marca, precio y descripción automáticamente</p>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary/50 group-hover:translate-x-1 transition-transform">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </Link>
+
             <h1 className="text-4xl lg:text-5xl font-serif font-bold text-primary mb-2">Nueva Publicación</h1>
             <p className="text-muted italic">Asegúrate de tomar fotos con buena iluminación para vender más rápido.</p>
           </header>

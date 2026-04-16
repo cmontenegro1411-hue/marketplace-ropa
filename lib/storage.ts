@@ -26,3 +26,25 @@ export const uploadMultipleImages = async (files: File[]): Promise<string[]> => 
   const urls = await Promise.all(uploadPromises);
   return urls.filter((url): url is string => url !== null);
 };
+
+/**
+ * Sube imágenes a través del API route /api/upload (server-side con service_role).
+ * Usar esta función desde componentes cliente — bypasa el bloqueo de RLS de Storage.
+ */
+export const uploadMultipleImagesViaAPI = async (files: File[]): Promise<string[]> => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Error al subir imágenes al servidor');
+  }
+
+  return data.urls as string[];
+};

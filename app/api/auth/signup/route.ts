@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { syncSellerToNotion } from '@/lib/notion';
 
 export async function POST(req: Request) {
   try {
@@ -38,6 +39,16 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
+
+    // 3. Sincronizar con CRM en Notion (fire-and-forget: no hacer await para no bloquear la UI)
+    syncSellerToNotion({
+      userId: newUser.id,
+      email: newUser.email,
+      name: newUser.name || newUser.email.split('@')[0], // Fallback por si acaso
+      source: 'Web' // Por defecto
+    }).catch(err => {
+      console.error('[API Signup] Error en promesa de sync Notion:', err);
+    });
 
     return NextResponse.json({ message: 'Usuario creado', user: { id: newUser.id, email: newUser.email } }, { status: 201 });
 

@@ -1,9 +1,9 @@
 import React from 'react';
-import { Container } from \"@/components/ui/Container\";
-import { supabase } from \"@/lib/supabase\";
-import { auth } from \"@/auth\";
+import { Container } from '@/components/ui/Container';
+import { supabase } from '@/lib/supabase';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
-import { EditProductForm } from \"@/components/product/EditProductForm\";
+import { EditProductForm } from '@/components/product/EditProductForm';
 
 interface PageProps {
   params: Promise<{
