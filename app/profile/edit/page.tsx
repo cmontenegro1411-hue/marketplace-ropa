@@ -33,10 +33,10 @@ export default function EditProfilePage() {
     if (session?.user) {
       setFormData(prev => ({
         ...prev,
-        name: session.user.name || '',
-        email: session.user.email || '',
+        name: session.user?.name || '',
+        email: session.user?.email || '',
       }));
-      if (session.user.id) {
+      if (session.user?.id) {
          loadExtraData(session.user.id);
       }
     }
