@@ -106,6 +106,16 @@ export async function deductCredit(userId: string): Promise<void> {
 }
 
 // Helper interno
+export async function addCredits(userId: string, amount: number): Promise<void> {
+  const current = await getOrCreateCredits(userId);
+  if (current.plan === 'unlimited') return;
+
+  await supabaseAdmin
+    .from('listing_credits')
+    .update({ credits_total: current.credits_total + amount })
+    .eq('user_id', userId);
+}
+
 function buildCreditInfo(row: {
   plan: string;
   credits_total: number;
