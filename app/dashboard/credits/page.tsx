@@ -51,14 +51,13 @@ export default function CreditsPage() {
           </div>
           <h1 className="text-5xl font-serif font-bold text-primary tracking-tight mb-4">Recarga tus Créditos IA</h1>
           <p className="text-muted text-lg max-w-lg mx-auto">
-            Evita el trabajo manual de catalogación. Nuestra IA redacta, estructura y valora tus prendas por ti.
-            Tarjetas, Yape y Plin disponibles mediante Mercado Pago.
+            Optimiza tu tiempo y escala tus ventas. Nuestra Inteligencia Artificial analiza tus prendas, extrae atributos, sugiere precios competitivos y redacta descripciones irresistibles en segundos.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {PACKAGES.map((pkg) => (
-            <div key={pkg.id} className={`relative bg-white rounded-[2rem] p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl flex flex-col ${pkg.popular ? 'border-2 border-accent shadow-xl scale-105 z-10' : 'border border-sand shadow-sm'}`}>
+            <div key={pkg.id} className={`relative bg-white rounded-[2rem] p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl flex flex-col ${pkg.popular ? 'border-2 border-accent shadow-xl scale-105 z-10' : 'border border-sand hover:border-accent hover:shadow-xl shadow-sm'}`}>
               
               {pkg.popular && (
                 <div className="absolute -top-4 inset-x-0 flex justify-center">
@@ -89,7 +88,7 @@ export default function CreditsPage() {
                 className={`w-full py-4 rounded-full font-bold text-[10px] uppercase tracking-widest transition-all
                   ${pkg.popular 
                     ? 'bg-primary text-cream hover:bg-secondary shadow-lg' 
-                    : 'bg-cream text-primary border border-sand hover:bg-sand/30'}
+                    : 'bg-primary/5 text-primary border border-transparent hover:bg-primary hover:text-cream shadow-sm'}
                   disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {loadingPkg === pkg.id ? 'Generando...' : 'Comprar Créditos'}
@@ -98,10 +97,15 @@ export default function CreditsPage() {
           ))}
         </div>
 
-        <div className="mt-16 flex items-center justify-center gap-6 opacity-60">
-          <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-icono-1024.png" alt="Mercado Pago" className="h-8 grayscale hover:grayscale-0 transition-all opacity-80" />
-          <div className="h-4 w-px bg-sand"></div>
-          <p className="text-xs font-medium uppercase tracking-widest">Pagos Seguros Yape & Plin</p>
+        <div className="mt-20 flex flex-col items-center justify-center gap-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">Pago 100% Seguro Vía Mercado Pago</p>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+            <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-icono-1024.png" alt="Mercado Pago" className="h-8 object-contain" />
+            <img src="https://seeklogo.com/images/Y/yape-logo-3E473EE7E5-seeklogo.com.png" alt="Yape" className="h-8 object-contain" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Plin_logo.svg/1024px-Plin_logo.svg.png" alt="Plin" className="h-8 object-contain" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4 object-contain" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-6 object-contain" />
+          </div>
         </div>
       </Container>
     </div>
