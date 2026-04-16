@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
-export async function updateProfile(formData: { name: string; email: string }) {
+export async function updateProfile(formData: { name: string; email: string; whatsapp_number?: string }) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -16,7 +16,8 @@ export async function updateProfile(formData: { name: string; email: string }) {
       .from('users')
       .update({
         name: formData.name,
-        email: formData.email
+        email: formData.email,
+        whatsapp_number: formData.whatsapp_number
       })
       .eq('id', session.user.id);
 

@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -38,7 +39,10 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Solo si la BD respondió OK, limpiamos el carrito y mostramos éxito
+      // Solo si la BD respondió OK, guardamos contactos, limpiamos el carrito y mostramos éxito
+      if (result.contacts) {
+        setContacts(result.contacts);
+      }
       clearCart();
       setIsSuccess(true);
 
@@ -50,13 +54,9 @@ export default function CheckoutPage() {
 
   // Pantalla de Éxito (Reserva P2P)
   if (isSuccess) {
-    const contactWhatsApp = "51999888777"; 
-    const whatsappMessage = encodeURIComponent(`¡Hola! Acabo de separar ${cart.length} prendas por un total de S/ ${totalPrice.toLocaleString()} en la plataforma de Moda Circular. Quisiera coordinar el pago y el envío contigo.`);
-    const whatsappUrl = `https://wa.me/${contactWhatsApp}?text=${whatsappMessage}`;
-
     return (
       <div className="min-h-screen bg-[#FBF9F6] flex items-center justify-center p-8 pt-20">
-        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-sand max-w-2xl text-center animate-fade-in-up">
+        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-sand max-w-2xl w-full text-center animate-fade-in-up">
           <div className="w-24 h-24 rounded-full bg-accent text-cream flex items-center justify-center mx-auto mb-8 shadow-lg">
              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
@@ -66,28 +66,40 @@ export default function CheckoutPage() {
           </p>
           <div className="bg-sand/30 p-6 rounded-2xl mb-8">
              <p className="text-sm font-bold text-primary mb-2">Siguiente Paso Obligatorio:</p>
-             <p className="text-xs text-muted">Abre WhatsApp para conversar directamente con tu vendedor, enviarle la captura y coordinar el pago por Yape/Plin y la dirección donde te lo enviarán.</p>
+             <p className="text-xs text-muted mb-4">Haz clic en los botones de abajo para abrir WhatsApp y conversar directamente con el vendedor (o vendedores) de tus prendas. Coordina con ellos el pago contraentrega y la dirección local.</p>
+             
+             <div className="flex flex-col gap-3 text-left">
+                {contacts.length > 0 ? contacts.map((seller, idx) => {
+                  const number = seller.whatsapp || "51999888777";
+                  // Formulando el mensaje amigable
+                  const msg = encodeURIComponent(`¡Hola ${seller.sellerName}! Acabo de reservar ${seller.productCount} prenda(s) tuya(s) por S/ ${seller.totalAmount.toLocaleString()} en la plataforma de Moda Circular. (${seller.productsList}). Quisiera coordinar la contraentrega contigo.`);
+                  const waLink = `https://wa.me/${number}?text=${msg}`;
+
+                  return (
+                    <a key={idx} href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-white hover:bg-[#25D366]/10 border border-[#25D366]/30 rounded-xl transition-all group">
+                       <div>
+                         <p className="text-sm font-bold text-primary">Vendedor: {seller.sellerName}</p>
+                         <p className="text-[10px] uppercase tracking-widest text-muted">{seller.productCount} prendas • S/ {seller.totalAmount.toLocaleString()}</p>
+                       </div>
+                       <div className="bg-[#25D366] text-white p-2.5 rounded-full group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0A12 12 0 000 12c0 2.112.553 4.218 1.635 6.06L.01 24l6.096-1.597A11.964 11.964 0 0011.996 24 12 12 0 0024 12 12 12 0 0011.996 0zm6.545 17.15c-.292.833-1.42 1.574-2.193 1.616-.628.03-1.428-.15-2.527-.604-4.216-1.745-6.936-6.074-7.143-6.353-.207-.278-1.705-2.274-1.705-4.34 0-2.067 1.07-3.085 1.455-3.5.353-.38 1.05-.595 1.536-.595.143 0 .27.006.38.013.38.018.57.037.82.639.317.763 1.082 2.65 1.176 2.842.095.192.16.417.065.61-.095.192-.143.313-.284.475-.14.162-.294.354-.423.493-.143.14-.294.293-.13.578.163.284.723 1.198 1.55 1.936 1.066.953 1.956 1.25 2.15 1.346.195.096.31.082.427-.053.116-.135.5-58.58-.727.784-.81.282-.027 1.306-2.5 1.44-4.887 2.05zm0 0"/></svg>
+                       </div>
+                    </a>
+                  )
+                }) : (
+                   <p className="text-xs text-muted">No se pudo recuperar la información de contacto.</p>
+                )}
+             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => clearCart()}
-                className="px-8 py-4 bg-[#25D366] text-white rounded-full text-xs font-bold w-full sm:w-auto uppercase tracking-widest hover:bg-[#20bd5a] transition-all shadow-md flex items-center justify-center gap-3"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0A12 12 0 000 12c0 2.112.553 4.218 1.635 6.06L.01 24l6.096-1.597A11.964 11.964 0 0011.996 24 12 12 0 0024 12 12 12 0 0011.996 0zm6.545 17.15c-.292.833-1.42 1.574-2.193 1.616-.628.03-1.428-.15-2.527-.604-4.216-1.745-6.936-6.074-7.143-6.353-.207-.278-1.705-2.274-1.705-4.34 0-2.067 1.07-3.085 1.455-3.5.353-.38 1.05-.595 1.536-.595.143 0 .27.006.38.013.38.018.57.037.82.639.317.763 1.082 2.65 1.176 2.842.095.192.16.417.065.61-.095.192-.143.313-.284.475-.14.162-.294.354-.423.493-.143.14-.294.293-.13.578.163.284.723 1.198 1.55 1.936 1.066.953 1.956 1.25 2.15 1.346.195.096.31.082.427-.053.116-.135.5-58.58-.727.784-.81.282-.027 1.306-2.5 1.44-4.887 2.05zm0 0"/></svg>
-                Ir a WhatsApp
-              </a>
-              <Link
-                href="/search"
-                onClick={() => clearCart()}
-                className="px-8 py-4 border-2 border-sand text-muted rounded-full text-xs font-bold uppercase w-full sm:w-auto tracking-widest hover:bg-cream transition-all text-center"
-              >
-                Volver al catálogo
-              </Link>
-            </div>
+          <div className="mt-8 pt-6 border-t border-sand">
+             <Link
+               href="/search"
+               className="inline-block px-8 py-4 bg-primary text-cream rounded-full text-xs font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md"
+             >
+               Volver al catálogo
+             </Link>
+          </div>
         </div>
       </div>
     );

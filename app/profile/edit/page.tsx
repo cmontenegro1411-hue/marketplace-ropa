@@ -16,16 +16,29 @@ export default function EditProfilePage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    whatsapp_number: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
   useEffect(() => {
+    async function loadExtraData(userId: string) {
+      const { supabase } = await import('@/lib/supabase');
+      const { data } = await supabase.from('users').select('whatsapp_number').eq('id', userId).single();
+      if (data?.whatsapp_number) {
+        setFormData(prev => ({ ...prev, whatsapp_number: data.whatsapp_number }));
+      }
+    }
+
     if (session?.user) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         name: session.user.name || '',
         email: session.user.email || '',
-      });
+      }));
+      if (session.user.id) {
+         loadExtraData(session.user.id);
+      }
     }
   }, [session]);
 
@@ -94,6 +107,22 @@ export default function EditProfilePage() {
                 className="w-full bg-cream/30 border border-sand rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none" 
               />
               <p className="text-[9px] text-muted uppercase tracking-widest mt-1 ml-2">* Este correo se usa para notificaciones e inicio de sesión.</p>
+            </div>
+
+            <div className="space-y-2">
+               <div className="flex justify-between items-center">
+                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Número de WhatsApp</label>
+                 <span className="text-[9px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Obligatorio para vender</span>
+               </div>
+               <input 
+                 required 
+                 type="tel" 
+                 placeholder="Ej. 999888777"
+                 value={formData.whatsapp_number} 
+                 onChange={(e) => setFormData({...formData, whatsapp_number: e.target.value})} 
+                 className="w-full bg-cream/30 border border-sand rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none" 
+               />
+               <p className="text-[9px] text-muted uppercase tracking-widest mt-1 ml-2">* Los compradores te contactarán a este número al reservar tus prendas.</p>
             </div>
 
             <div className="pt-6">

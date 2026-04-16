@@ -131,7 +131,7 @@ export async function completePurchase(productIds: string[]) {
     // CAPA DE SEGURIDAD: Verificar que TODOS los productos aún estén disponibles
     const { data: products, error: checkError } = await supabase
       .from('products')
-      .select('id, title, status')
+      .select('id, title, status, seller_id, price')
       .in('id', productIds);
 
     if (checkError) {
@@ -160,6 +160,27 @@ export async function completePurchase(productIds: string[]) {
       return { success: false, error: error.message };
     }
 
+    // Obtener los datos de contacto de los vendedores
+    const sellerIds = [...new Set(products!.map(p => p.seller_id))];
+    const { data: sellers } = await supabase
+      .from('users')
+      .select('id, name, whatsapp_number')
+      .in('id', sellerIds);
+
+    // Mapear los productos ganados a cada seller respectivo
+    const contactInfo = sellers?.map(seller => {
+      const sellerProducts = products!.filter(p => p.seller_id === seller.id);
+      const totalAmount = sellerProducts.reduce((sum, p) => sum + p.price, 0);
+      return {
+        sellerId: seller.id,
+        sellerName: seller.name || 'Vendedor',
+        whatsapp: seller.whatsapp_number,
+        productCount: sellerProducts.length,
+        totalAmount: totalAmount,
+        productsList: sellerProducts.map(p => p.title).join(', ')
+      };
+    }) || [];
+
     // Revalidar todas las páginas que muestran productos
     revalidatePath('/');
     revalidatePath('/search');
@@ -169,7 +190,7 @@ export async function completePurchase(productIds: string[]) {
       revalidatePath(`/product/${id}`);
     }
 
-    return { success: true, soldCount: availableIds.length };
+    return { success: true, soldCount: availableIds.length, contacts: contactInfo };
   } catch (error: any) {
     console.error("completePurchase Error:", error);
     return { success: false, error: error.message || "Error inesperado" };
