@@ -17,11 +17,15 @@ export default async function AIHistoryDashboard() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  // Traer historial de este usuario (o de todos si fuera admin puro, pero por ahora mostramos el suyo)
+  // Solo el Admin puede ver este panel
+  if (session.user.email !== process.env.ADMIN_EMAIL) {
+    redirect('/profile');
+  }
+
+  // Traer historial de todos los usuarios en la plataforma
   const { data: logs, error } = await supabaseAdmin
     .from('ai_generations_log')
     .select('*')
-    .eq('user_id', session.user.id)
     .order('created_at', { ascending: false });
 
   if (error) console.error("Error fetching AI logs:", error);
