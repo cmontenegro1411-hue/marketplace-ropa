@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [plan, setPlan] = useState('starter');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, plan }),
       });
 
       const data = await res.json();
@@ -60,6 +61,38 @@ export default function SignupPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              
+              <div className="space-y-3 mb-6">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Elige tu Paquete de Vendedor</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div 
+                    onClick={() => setPlan('starter')}
+                    className={`cursor-pointer border p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all ${plan === 'starter' ? 'border-accent bg-accent/5 shadow-md scale-105' : 'border-sand hover:border-primary/30 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'}`}
+                  >
+                    <span className="font-bold text-primary mb-1 text-sm leading-tight">Starter</span>
+                    <span className="text-[10px] text-muted font-medium mb-1">50 Prendas <br/> 10 Desc. IA</span>
+                    <span className="text-xs font-serif font-bold text-accent">S/ 29</span>
+                  </div>
+                  <div 
+                    onClick={() => setPlan('pro')}
+                    className={`cursor-pointer border p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all relative ${plan === 'pro' ? 'border-primary bg-primary text-cream shadow-xl grayscale-0 opacity-100 scale-105' : 'border-sand hover:border-primary/30 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'}`}
+                  >
+                    {plan !== 'pro' && <span className="absolute -top-2 right-2 bg-accent text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase">Popular</span>}
+                    <span className={`font-bold mb-1 text-sm leading-tight ${plan === 'pro' ? 'text-cream' : 'text-primary'}`}>Pro</span>
+                    <span className={`text-[10px] font-medium mb-1 ${plan === 'pro' ? 'text-cream/80' : 'text-muted'}`}>200 Prendas <br/> 50 Desc. IA</span>
+                    <span className={`text-xs font-serif font-bold ${plan === 'pro' ? 'text-[#00E0A6]' : 'text-accent'}`}>S/ 69</span>
+                  </div>
+                  <div 
+                    onClick={() => setPlan('unlimited')}
+                    className={`cursor-pointer border p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all ${plan === 'unlimited' ? 'border-accent bg-accent/5 shadow-md scale-105' : 'border-sand hover:border-primary/30 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'}`}
+                  >
+                    <span className="font-bold text-primary mb-1 text-sm leading-tight">Ilimitado</span>
+                    <span className="text-[10px] text-muted font-medium mb-1">∞ Prendas <br/> 200 Desc. IA</span>
+                    <span className="text-xs font-serif font-bold text-accent">S/ 129</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Nombre Completo</label>
                 <input 

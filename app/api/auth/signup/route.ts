@@ -5,10 +5,10 @@ import { syncSellerToNotion } from '@/lib/notion';
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, plan } = await req.json();
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ message: 'Todos los campos son requeridos' }, { status: 400 });
+    if (!email || !password || !name || !plan) {
+      return NextResponse.json({ message: 'Todos los campos y la selección de plan son requeridos' }, { status: 400 });
     }
 
     // 1. Encriptar contraseña
@@ -39,6 +39,22 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
+
+    // 2.5 Insertar el paquete publicitario del Vendedor
+    const planLimits = {
+      starter: { limit: 50, ai: 10 },
+      pro: { limit: 200, ai: 50 },
+      unlimited: { limit: 9999, ai: 200 },
+    };
+    const selectedPlan = planLimits[plan as keyof typeof planLimits] || planLimits.starter;
+
+    await supabase.from('listing_credits').insert({
+      user_id: newUser.id,
+      plan: plan,
+      credits_total: selectedPlan.ai,
+      credits_used: 0,
+      product_limit: selectedPlan.limit
+    });
 
     // 3. Sincronizar con CRM en Notion (fire-and-forget: no hacer await para no bloquear la UI)
     syncSellerToNotion({
