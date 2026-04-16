@@ -48,59 +48,65 @@ export default function CheckoutPage() {
     }
   };
 
-  // Pantalla de Éxito (reemplaza el alert())
+  // Pantalla de Éxito (Reserva P2P)
   if (isSuccess) {
+    const contactWhatsApp = "51999888777"; 
+    const whatsappMessage = encodeURIComponent(`¡Hola! Acabo de separar ${cart.length} prendas por un total de S/ ${totalPrice.toLocaleString()} en la plataforma de Moda Circular. Quisiera coordinar el pago y el envío contigo.`);
+    const whatsappUrl = `https://wa.me/${contactWhatsApp}?text=${whatsappMessage}`;
+
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
-          <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-8 border-2 border-green-200 shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div className="min-h-screen bg-[#FBF9F6] flex items-center justify-center p-8 pt-20">
+        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-sand max-w-2xl text-center animate-fade-in-up">
+          <div className="w-24 h-24 rounded-full bg-accent text-cream flex items-center justify-center mx-auto mb-8 shadow-lg">
+             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
-          <h1 className="text-4xl font-serif font-bold text-primary mb-3">¡Pedido Confirmado!</h1>
-          <p className="text-muted mb-2 leading-relaxed">
-            Los productos han sido marcados como <strong className="text-primary">Vendidos</strong> en el sistema.
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">¡Prendas Reservadas!</h1>
+          <p className="text-muted text-lg leading-relaxed mb-4">
+            Hemos bloqueado estas prendas en el sistema para que nadie más pueda llevárselas.
           </p>
-          <p className="text-xs text-muted/60 uppercase tracking-widest mb-10">
-            Pago simulado · Sin pasarela real
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="bg-sand/30 p-6 rounded-2xl mb-8">
+             <p className="text-sm font-bold text-primary mb-2">Siguiente Paso Obligatorio:</p>
+             <p className="text-xs text-muted">Abre WhatsApp para conversar directamente con tu vendedor, enviarle la captura y coordinar el pago por Yape/Plin y la dirección donde te lo enviarán.</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => clearCart()}
+                className="px-8 py-4 bg-[#25D366] text-white rounded-full text-xs font-bold w-full sm:w-auto uppercase tracking-widest hover:bg-[#20bd5a] transition-all shadow-md flex items-center justify-center gap-3"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0A12 12 0 000 12c0 2.112.553 4.218 1.635 6.06L.01 24l6.096-1.597A11.964 11.964 0 0011.996 24 12 12 0 0024 12 12 12 0 0011.996 0zm6.545 17.15c-.292.833-1.42 1.574-2.193 1.616-.628.03-1.428-.15-2.527-.604-4.216-1.745-6.936-6.074-7.143-6.353-.207-.278-1.705-2.274-1.705-4.34 0-2.067 1.07-3.085 1.455-3.5.353-.38 1.05-.595 1.536-.595.143 0 .27.006.38.013.38.018.57.037.82.639.317.763 1.082 2.65 1.176 2.842.095.192.16.417.065.61-.095.192-.143.313-.284.475-.14.162-.294.354-.423.493-.143.14-.294.293-.13.578.163.284.723 1.198 1.55 1.936 1.066.953 1.956 1.25 2.15 1.346.195.096.31.082.427-.053.116-.135.5-58.58-.727.784-.81.282-.027 1.306-2.5 1.44-4.887 2.05zm0 0"/></svg>
+                Ir a WhatsApp
+              </a>
               <Link
                 href="/search"
-                className="px-8 py-3 bg-primary text-cream rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-md"
+                onClick={() => clearCart()}
+                className="px-8 py-4 border-2 border-sand text-muted rounded-full text-xs font-bold uppercase w-full sm:w-auto tracking-widest hover:bg-cream transition-all text-center"
               >
-                Seguir Comprando
+                Volver al catálogo
               </Link>
-              {session ? (
-                <Link
-                  href="/profile"
-                  className="px-8 py-3 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all"
-                >
-                  Ver Mi Closet
-                </Link>
-              ) : (
-                <Link
-                  href="/"
-                  className="px-8 py-3 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all"
-                >
-                  Ir al Inicio
-                </Link>
-              )}
             </div>
         </div>
       </div>
     );
   }
 
-  if (cart.length === 0) {
+  if (cart.length === 0 && !isSuccess) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted mb-4">Tu carrito está vacío.</p>
+          <p className="text-muted mb-4">Aún no has seleccionado ninguna prenda.</p>
           <Link href="/search" className="text-primary font-bold underline">Explorar catálogo</Link>
         </div>
       </div>
     );
   }
+
+  // Número de la plataforma (o del vendedor si lo tuvieramos) para armar el mensaje de WhatsApp
+  const contactWhatsApp = "51999888777"; 
+  const whatsappMessage = encodeURIComponent(`¡Hola! Acabo de reservar prendas en la plataforma y requiero coordinar la entrega y el pago contraentrega.`);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -109,8 +115,11 @@ export default function CheckoutPage() {
       <Container className="py-12 lg:py-20">
         <div className="max-w-4xl mx-auto">
           <header className="mb-12 text-center">
-            <h1 className="text-4xl font-serif font-bold text-primary mb-2">Finalizar Pedido</h1>
-            <p className="text-muted italic">Estás a un paso de darle una nueva vida a estas prendas.</p>
+             <div className="inline-block px-4 py-1.5 border border-primary/20 rounded-full mb-4 bg-white">
+               <span className="text-primary font-bold tracking-[0.5em] uppercase text-[9px]">Reserva Sin Compromiso Analógico</span>
+            </div>
+            <h1 className="text-4xl font-serif font-bold text-primary mb-2">Separa tus prendas</h1>
+            <p className="text-muted italic max-w-lg mx-auto">Ninguna tarjeta es requerida. Reserva las prendas para que nadie más pueda tomarlas y coordina la contraentrega directo con el vendedor.</p>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12">
@@ -124,67 +133,63 @@ export default function CheckoutPage() {
               )}
 
               <section className="space-y-6">
-                <h2 className="text-xl font-serif font-bold text-primary border-b border-sand pb-4">Información de Envío</h2>
+                 <div className="flex items-center gap-3 border-b border-sand pb-4">
+                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-cream text-primary font-bold">1</span>
+                     <h2 className="text-xl font-serif font-bold text-primary">Tus Datos de Contacto</h2>
+                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Nombre Completo</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">¿Cómo te llamas?</label>
                     <input
                       required
                       type="text"
+                      placeholder="Ej. Camila"
                       className="w-full bg-cream/30 border border-sand rounded-2xl py-3 px-4 focus:ring-1 focus:ring-primary outline-none"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Email</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Email para recibo</label>
                     <input
                       required
                       type="email"
+                      placeholder="correo@ejemplo.com"
                       className="w-full bg-cream/30 border border-sand rounded-2xl py-3 px-4 focus:ring-1 focus:ring-primary outline-none"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                     />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Dirección de Entrega</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="Calle, número, apto..."
-                    className="w-full bg-cream/30 border border-sand rounded-2xl py-3 px-4 focus:ring-1 focus:ring-primary outline-none"
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  />
-                </div>
               </section>
 
               <section className="space-y-4">
-                <h2 className="text-xl font-serif font-bold text-primary border-b border-sand pb-4">Método de Pago (Simulado)</h2>
-                <div className="bg-primary/5 p-6 rounded-2xl border border-primary/10">
+                 <div className="flex items-center gap-3 border-b border-sand pb-4">
+                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-accent text-white font-bold">2</span>
+                     <h2 className="text-xl font-serif font-bold text-primary">Método de Pago</h2>
+                 </div>
+                 
+                <div className="bg-[#00E0A6]/10 p-6 rounded-2xl border border-[#00E0A6]/30">
                   <div className="flex items-center gap-4 mb-3">
-                    <div className="w-10 h-6 bg-primary rounded-md shadow-sm"></div>
-                    <span className="text-sm font-bold text-primary">Tarjeta de Crédito / Débito</span>
+                    <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center shadow-sm">
+                        <span className="text-[#00E0A6] font-bold text-xs">P2P</span>
+                    </div>
+                    <div>
+                      <span className="block text-sm font-bold text-primary">Coordinación Directa / Contraentrega</span>
+                      <span className="text-xs text-muted">Acepta Yape, Plin o Efectivo según acuerdes.</span>
+                    </div>
                   </div>
-                  <input
-                    disabled
-                    type="text"
-                    className="w-full bg-white border border-sand rounded-xl py-3 px-4 text-muted cursor-not-allowed"
-                    value="xxxx xxxx xxxx xxxx"
-                  />
-                  <p className="text-[9px] text-muted mt-2 uppercase tracking-widest">* En este prototipo no se procesan pagos reales.</p>
                 </div>
               </section>
 
               <button
                 type="submit"
                 disabled={isProcessing}
-                className="w-full py-5 bg-primary text-cream rounded-full text-sm font-bold uppercase tracking-widest shadow-xl hover:bg-primary/90 hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
+                className="w-full py-5 bg-primary text-cream rounded-full text-base font-bold uppercase tracking-widest shadow-xl hover:bg-primary/90 hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
               >
                 {isProcessing
-                  ? '⏳ Registrando venta en base de datos...'
-                  : `Confirmar Pedido · S/ ${totalPrice.toLocaleString()}`
+                  ? '⏳ Separando prendas en la base de datos...'
+                  : `Reservar Ahora por S/ ${totalPrice.toLocaleString()}`
                 }
               </button>
             </form>
@@ -192,8 +197,8 @@ export default function CheckoutPage() {
             {/* RESUMEN LATERAL */}
             <aside className="space-y-6 h-fit sticky top-32">
               <div className="bg-sand/20 rounded-3xl p-6 border border-sand/50">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Tu Pedido ({cart.length} prendas)</h3>
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Resumen de Reserva ({cart.length} prendas)</h3>
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 mb-4">
                   {cart.map(item => (
                     <div key={item.id} className="flex gap-3">
                       <img src={item.imageUrl} className="w-10 h-14 bg-white rounded-lg object-cover shadow-sm" alt={item.title} />
@@ -204,14 +209,11 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 pt-4 border-t border-sand flex justify-between items-baseline">
-                  <span className="text-xs font-bold text-muted uppercase tracking-widest">Total</span>
-                  <span className="text-2xl font-serif font-bold text-primary">S/ {totalPrice.toLocaleString()}</span>
+                <div className="mt-4 pt-4 border-t border-sand flex justify-between items-baseline">
+                  <span className="text-xs font-bold text-muted uppercase tracking-widest">Total a Pagar</span>
+                  <span className="text-3xl font-serif font-bold text-accent">S/ {totalPrice.toLocaleString()}</span>
                 </div>
               </div>
-              <p className="text-center text-[10px] text-muted px-4 leading-relaxed">
-                Al confirmar aceptas nuestros términos de servicio y política de moda circular.
-              </p>
             </aside>
           </div>
         </div>
