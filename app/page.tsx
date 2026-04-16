@@ -117,20 +117,22 @@ export default async function Home() {
                <h3 className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted mb-4">Curaduría por Estilo</h3>
                <h2 className="text-5xl font-serif font-bold text-primary">Nuestras Categorías</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {[
-                { name: 'Mujer', desc: 'Elegancia y Sofisticación' },
-                { name: 'Hombre', desc: 'Clásicos Atemporales' },
-                { name: 'Accesorios', desc: 'Detalles de Distinción' },
-                { name: 'Calzado', desc: 'Pasos con Tradición' }
+                { name: 'Mujer', desc: 'Elegancia y Sofisticación', img: '/categories/mujer.png' },
+                { name: 'Hombre', desc: 'Clásicos Atemporales', img: '/categories/hombre.png' },
+                { name: 'Niños', desc: 'Pequeñas Tendencias', img: '/categories/ninos.png' },
+                { name: 'Accesorios', desc: 'Detalles de Distinción', img: '/categories/accesorios.png' },
+                { name: 'Calzado', desc: 'Pasos con Tradición', img: '/categories/calzado.png' }
               ].map((cat) => (
                 <Link key={cat.name} href={`/search?cat=${cat.name}`} className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-white border border-sand shadow-sm hover:shadow-2xl transition-all duration-700 hover:-translate-y-2">
-                  <div className="absolute inset-x-0 bottom-0 p-10 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{cat.desc}</p>
-                    <h4 className="text-3xl font-serif font-bold text-primary">{cat.name}</h4>
+                  <img src={cat.img} alt={`Categoría ${cat.name}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                  <div className="absolute inset-x-0 bottom-0 p-8 z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white mb-2 opacity-0 group-hover:opacity-100 transition-opacity">{cat.desc}</p>
+                    <h4 className="text-2xl lg:text-3xl font-serif font-bold text-white drop-shadow-md">{cat.name}</h4>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent z-10" />
-                  <div className="absolute inset-0 bg-accent/0 group-hover:bg-accent/5 transition-colors duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                  <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-700 z-10" />
                 </Link>
               ))}
             </div>
