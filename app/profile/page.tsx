@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { auth } from "@/auth";
 import { DeleteListingButton } from "@/components/product/DeleteListingButton";
 import { EditListingLink } from "@/components/product/EditListingLink";
+import { MarkAvailableButton } from "@/components/product/MarkAvailableButton";
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -108,6 +109,9 @@ export default async function ProfilePage() {
                 {/* Actions Overlay */}
                 <EditListingLink productId={product.id} />
                 <DeleteListingButton productId={product.id} title={product.title} />
+                {product.status === 'sold' && (
+                  <MarkAvailableButton productId={product.id} title={product.title} />
+                )}
               </div>
             ))}
             

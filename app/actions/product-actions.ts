@@ -175,3 +175,46 @@ export async function completePurchase(productIds: string[]) {
     return { success: false, error: error.message || "Error inesperado" };
   }
 }
+
+/**
+ * Marca un producto como 'available'. Útil para cuando el comprador
+ * cancela la compra o no responde después de reservar por WhatsApp.
+ */
+export async function markAsAvailable(productId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "No autorizado." };
+    }
+
+    // Verificar propiedad
+    const { data: existing, error: fetchErr } = await supabase
+      .from('products')
+      .select('seller_id')
+      .eq('id', productId)
+      .single();
+
+    if (fetchErr || !existing || existing.seller_id !== session.user.id) {
+      return { success: false, error: "No tienes permiso para actualizar este producto." };
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .update({ status: 'available' })
+      .eq('id', productId);
+
+    if (error) {
+       return { success: false, error: error.message };
+    }
+
+    revalidatePath('/');
+    revalidatePath('/search');
+    revalidatePath(`/product/${productId}`);
+    revalidatePath('/profile');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("markAsAvailable Action Error:", error);
+    return { success: false, error: error.message || "Error inesperado" };
+  }
+}
