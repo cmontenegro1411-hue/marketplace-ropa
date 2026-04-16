@@ -33,8 +33,13 @@ export default function SignupPage() {
         throw new Error(data.message || 'Error al registrarse');
       }
 
-      // Registro exitoso, redirigir al login
-      router.push('/login?registered=true');
+      // Redirigir a la pasarela de pago (Mercado Pago)
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        // Fallback por seguridad
+        router.push('/login?registered=true');
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -134,7 +139,7 @@ export default function SignupPage() {
                 type="submit"
                 className="w-full py-5 bg-primary text-cream rounded-full text-[11px] font-bold uppercase tracking-[0.3em] overflow-hidden relative group"
               >
-                <span className="relative z-10">{isLoading ? 'Creando Closet...' : 'Crear mi Cuenta'}</span>
+                <span className="relative z-10">{isLoading ? 'Procesando...' : 'Pagar y Crear mi Cuenta'}</span>
                 <div className="absolute inset-0 bg-accent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
               </button>
             </form>
