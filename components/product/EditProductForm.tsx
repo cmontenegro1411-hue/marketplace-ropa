@@ -152,6 +152,7 @@ export function EditProductForm({ product }: EditProductFormProps) {
             <select required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full bg-cream/30 border border-sand rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none appearance-none font-medium">
               <option value="Mujer">Mujer</option>
               <option value="Hombre">Hombre</option>
+              <option value="Niños">Niños</option>
               <option value="Accesorios">Accesorios</option>
               <option value="Calzado">Calzado</option>
             </select>

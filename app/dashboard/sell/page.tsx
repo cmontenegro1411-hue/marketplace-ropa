@@ -170,6 +170,7 @@ const SellPage = () => {
                   <option value="">Seleccionar...</option>
                   <option value="Mujer">Mujer</option>
                   <option value="Hombre">Hombre</option>
+                  <option value="Niños">Niños</option>
                   <option value="Accesorios">Accesorios</option>
                   <option value="Calzado">Calzado</option>
                 </select>

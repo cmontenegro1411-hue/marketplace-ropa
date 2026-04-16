@@ -22,7 +22,7 @@ export const FilterSidebar = () => {
     router.push(`/search?${params.toString()}`);
   };
 
-  const categories = ['Mujer', 'Hombre', 'Accesorios', 'Calzado'];
+  const categories = ['Mujer', 'Hombre', 'Niños', 'Accesorios', 'Calzado'];
   const conditions = ['Nuevo con etiqueta', 'Muy buen estado', 'Buen estado', 'Usado'];
 
   return (

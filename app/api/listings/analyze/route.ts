@@ -35,7 +35,7 @@ const SYSTEM_PROMPT = `Eres un experto en moda vintage y segunda mano especializ
   "descripcion": "descripción de 150 a 300 palabras, mencionar material, estilo, época, cómo combinarlo",
   "marca": "nombre de marca detectada o null si no se ve claramente",
   "confianza_marca": 0.0,
-  "categoria": "Mujer | Hombre | Accesorios | Calzado",
+  "categoria": "Mujer | Hombre | Niños | Accesorios | Calzado",
   "subcategoria": "subcategoría específica: Vestido, Pantalón, Blusa, Camisa, etc.",
   "color": "color principal descriptivo",
   "material": "material estimado",
