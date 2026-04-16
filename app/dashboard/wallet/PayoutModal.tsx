@@ -30,8 +30,7 @@ export function PayoutModal({ availableFunds }: { availableFunds: number }) {
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        disabled={availableFunds <= 0}
-        className="px-8 py-4 bg-primary text-cream rounded-full text-xs font-bold uppercase tracking-widest hover:bg-secondary transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-8 py-4 bg-primary text-cream rounded-full text-xs font-bold uppercase tracking-widest hover:bg-secondary transition-all shadow-md"
       >
         Retirar Fondos
       </button>
