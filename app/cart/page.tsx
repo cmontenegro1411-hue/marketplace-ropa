@@ -87,10 +87,12 @@ export default function CartPage() {
                     Finalizar Compra
                   </Button>
                 </Link>
-                
-                <div className="pt-4 flex items-center justify-center gap-2 grayscale opacity-50">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6" />
+                <div className="pt-4 flex flex-col items-center justify-center gap-1 opacity-60">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Reserva Segura
+                  </span>
+                  <span className="text-[9px] text-muted uppercase tracking-widest">Pago P2P Contraentrega</span>
                 </div>
               </div>
             </aside>

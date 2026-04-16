@@ -142,8 +142,12 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                                 <span className="text-[10px] uppercase tracking-widest text-accent">{order.brand}</span>
                               </div>
                               {hasBuyer && (
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="text-xs font-medium text-muted">Reservado por <strong className="text-primary">{order.buyer_name}</strong></span>
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  <span className="text-xs font-medium text-muted">
+                                    Reservado por <strong className="text-primary">{order.buyer_name}</strong>
+                                  </span>
+                                  <span className="text-muted hidden sm:inline">•</span>
+                                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#25D366]">Tel: {order.buyer_phone}</span>
                                 </div>
                               )}
                             </div>
