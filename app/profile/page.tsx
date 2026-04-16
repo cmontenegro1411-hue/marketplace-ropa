@@ -56,7 +56,6 @@ export default async function ProfilePage() {
             <p className="text-muted font-medium">Panel del Vendedor • <span className="text-secondary font-bold tracking-tighter uppercase text-xs">Vendedor Verificado</span></p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
               <Link href="/profile/edit" className="px-6 py-2 bg-primary text-cream rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md">Editar Perfil</Link>
-              <Link href="/dashboard/wallet" className="px-6 py-2 border border-sand bg-cream/30 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all">Billetera</Link>
               <Link href="/profile/settings" className="px-6 py-2 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all">Configuración</Link>
               {session.user.email === process.env.ADMIN_EMAIL && (
                  <Link href="/dashboard/ai-history" className="px-6 py-2 border border-sand bg-cream/50 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-sand transition-all">Admin: Historial IA</Link>
@@ -76,11 +75,11 @@ export default async function ProfilePage() {
             <p className="text-[10px] text-muted mt-2 font-medium">Inventario: {formatCurrency(totalActiveValue)}</p>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Artículos Vendidos</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Artículos Reservados</p>
             <p className="text-4xl font-serif font-bold text-secondary">{soldProducts.length}</p>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Total Ganado en Ventas</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2" title="Suma del valor de tus prendas separadas">Valor Circular Generado</p>
             <p className="text-4xl font-serif font-bold text-accent">{formatCurrency(totalSalesValue)}</p>
           </div>
         </div>
