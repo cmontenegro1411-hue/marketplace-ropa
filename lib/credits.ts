@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
 );
 
 export const PLAN_CREDITS: Record<string, number> = {
-  free:      10,
+  free:      2,
   starter:   75,
   pro:       250,
   unlimited: Infinity,
@@ -87,25 +87,40 @@ export async function hasCredits(userId: string): Promise<boolean> {
 }
 
 /**
- * Descuenta 1 crédito al usuario (llamar SOLO después de una generación exitosa).
+ * Descuenta 1 crédito al usuario y determina el tipo de uso.
  */
-export async function deductCredit(userId: string): Promise<void> {
-  // Leer el valor actual primero para evitar valores negativos
+export async function deductCredit(userId: string): Promise<'free' | 'prepaid' | 'on_demand'> {
+  // Leer el valor actual primero
   const { data: current } = await supabaseAdmin
     .from('listing_credits')
-    .select('credits_used, plan')
+    .select('credits_used, credits_total, plan')
     .eq('user_id', userId)
     .single();
 
-  if (!current || current.plan === 'unlimited') return;
+  if (!current) throw new Error("No credit info found");
 
-  await supabaseAdmin
-    .from('listing_credits')
-    .update({ credits_used: current.credits_used + 1 })
-    .eq('user_id', userId);
+  const FREE_GIFT_LIMIT = 2;
+  let usageType: 'free' | 'prepaid' | 'on_demand' = 'on_demand';
+
+  if (current.credits_used < FREE_GIFT_LIMIT) {
+    usageType = 'free';
+  } else if (current.credits_used < current.credits_total) {
+    usageType = 'prepaid';
+  } else {
+    // Si llegamos aquí es porque permitimos el uso on_demand (validado antes en el API)
+    usageType = 'on_demand';
+  }
+
+  if (current.plan !== 'unlimited') {
+    await supabaseAdmin
+      .from('listing_credits')
+      .update({ credits_used: current.credits_used + 1 })
+      .eq('user_id', userId);
+  }
+
+  return usageType;
 }
 
-// Helper interno
 export async function addCredits(userId: string, amount: number): Promise<void> {
   const current = await getOrCreateCredits(userId);
   if (current.plan === 'unlimited') return;
@@ -113,6 +128,35 @@ export async function addCredits(userId: string, amount: number): Promise<void> 
   await supabaseAdmin
     .from('listing_credits')
     .update({ credits_total: current.credits_total + amount })
+    .eq('user_id', userId);
+}
+
+/**
+ * Migra al usuario a un nuevo plan, sumando créditos remanentes.
+ */
+export async function migratePlan(userId: string, targetPlanId: string): Promise<void> {
+  const current = await getOrCreateCredits(userId);
+  
+  const planDefinitions: Record<string, { limit: number, ai: number, dbValue: string }> = {
+    impulso: { limit: 10, ai: 6, dbValue: 'starter' },
+    crecimiento: { limit: 30, ai: 15, dbValue: 'pro' },
+    escala: { limit: 60, ai: 35, dbValue: 'unlimited' }
+  };
+  
+  const target = planDefinitions[targetPlanId.replace('plan_', '')];
+  if (!target) return;
+
+  // Lógica: Sumar créditos IA remanentes al nuevo paquete
+  const remainingAiCredits = Math.max(0, current.credits_total - current.credits_used);
+  const newTotalAi = target.ai + remainingAiCredits;
+  
+  await supabaseAdmin
+    .from('listing_credits')
+    .update({ 
+      plan: target.dbValue,
+      credits_total: newTotalAi,
+      credits_used: 0 // Reiniciamos el contador porque el remanente ya está en el nuevo total
+    })
     .eq('user_id', userId);
 }
 

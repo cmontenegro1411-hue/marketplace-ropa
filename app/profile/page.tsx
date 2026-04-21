@@ -1,14 +1,16 @@
 import React from 'react';
 import { Navbar } from "@/components/ui/Navbar";
 import { Container } from "@/components/ui/Container";
-import { ProductCard } from "@/components/ui/ProductCard";
+import { ProfileInventory } from "@/components/profile/ProfileInventory";
 import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
-import { DeleteListingButton } from "@/components/product/DeleteListingButton";
-import { EditListingLink } from "@/components/product/EditListingLink";
-import { MarkAvailableButton } from "@/components/product/MarkAvailableButton";
+import { MPConnectButton } from "@/components/profile/MPConnectButton";
+import { BuyerConformityButton } from "@/components/profile/BuyerConformityButton";
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { getOrCreateCredits } from '@/lib/credits';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -21,19 +23,42 @@ export default async function ProfilePage() {
   }
 
   // Fetch real User Products from Supabase
-  const { data: myProducts, error } = await supabase
+  const { data: myProducts, error: productsError } = await supabase
     .from('products')
     .select('*')
     .eq('seller_id', session.user.id)
     .order('created_at', { ascending: false });
 
-  if (error) console.error("Error fetching user products:", error);
+  // Obtener estado de Mercado Pago Connect (via Admin Client para mayor seguridad)
+  const { data: userData } = await supabaseAdmin
+    .from('users')
+    .select('mp_access_token')
+    .eq('id', session.user.id)
+    .single();
+
+  const isMPConnected = !!userData?.mp_access_token;
+
+  // Obtener mis compras (donde soy el comprador)
+  const { data: myPurchases } = await supabase
+    .from('products')
+    .select('*')
+    .eq('buyer_email', session.user.email)
+    .order('created_at', { ascending: false });
+
+  if (productsError) console.error("Error fetching user products:", productsError);
 
   const userName = session.user.name || "Usuario";
+  const isAdmin = (session.user as any).role === 'admin';
+  
+  // Obtener información de créditos unificada
+  const creditInfo = await getOrCreateCredits(session.user.id as string);
+  const creditsRemaining = isAdmin ? '∞' : creditInfo.credits_remaining;
 
   // Calcular estadísticas dinámicas reales
   const activeProducts = myProducts?.filter(p => !p.status || p.status === 'available') || [];
+  const reservedProducts = myProducts?.filter(p => p.status === 'reserved') || [];
   const soldProducts = myProducts?.filter(p => p.status === 'sold') || [];
+  
   const totalSalesValue = soldProducts.reduce((sum, p) => sum + (p.price || 0), 0);
   const totalActiveValue = activeProducts.reduce((sum, p) => sum + (p.price || 0), 0);
 
@@ -53,14 +78,30 @@ export default async function ProfilePage() {
           </div>
           <div className="text-center md:text-left space-y-2">
             <h1 className="text-4xl font-serif font-bold text-primary">{userName}</h1>
-            <p className="text-muted font-medium">Panel del Vendedor • <span className="text-secondary font-bold tracking-tighter uppercase text-xs">Vendedor Verificado</span></p>
+            <p className="text-muted font-medium">
+              {(session.user as any).role === 'admin' ? 'Panel de Administrador' : 'Panel del Vendedor'} • 
+              <span className="text-secondary font-bold tracking-tighter uppercase text-xs ml-1">
+                {(session.user as any).role === 'admin' ? 'Fundador' : 'Vendedor Verificado'}
+              </span>
+            </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
               <Link href="/profile/edit" className="px-6 py-2 bg-primary text-cream rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md">Editar Perfil</Link>
               <Link href="/profile/settings" className="px-6 py-2 border border-sand rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-cream transition-all">Configuración</Link>
-              {session.user.email === process.env.ADMIN_EMAIL && (
-                 <Link href="/dashboard/ai-history" className="px-6 py-2 border border-sand bg-cream/50 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-sand transition-all">Admin: Historial IA</Link>
+              {((session.user as any).role === 'admin') && (
+                 <Link href="/dashboard/ai-history" className="px-6 py-2 border border-sand bg-cream/50 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-sand transition-all">🔑 Admin: Auditoría IA</Link>
               )}
-              <Link href="/dashboard/credits" className="px-6 py-2 border border-accent text-accent rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-accent/5 transition-all">Recargar Créditos</Link>
+              <Link href="/dashboard/credits" className="px-6 py-2 border border-accent text-accent rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-accent/5 transition-all">Recargar Créditos IA</Link>
+              
+              <Suspense fallback={<div className="h-10 w-40 bg-sand/20 animate-pulse rounded-full"></div>}>
+                <MPConnectButton isConnected={isMPConnected} />
+              </Suspense>
+            </div>
+            
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-4 border-t border-sand/50 mt-4">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted">Créditos IA Disponibles</span>
+                <span className="font-bold text-sm text-primary">{isAdmin ? '∞' : creditInfo.credits_remaining}</span>
+              </div>
             </div>
           </div>
         </Container>
@@ -76,60 +117,16 @@ export default async function ProfilePage() {
           </div>
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Artículos Reservados</p>
-            <p className="text-4xl font-serif font-bold text-secondary">{soldProducts.length}</p>
+            <p className="text-4xl font-serif font-bold text-secondary">{reservedProducts.length}</p>
           </div>
           <div className="bg-white p-8 rounded-3xl border border-sand shadow-sm text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2" title="Suma del valor de tus prendas separadas">Valor Circular Generado</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2" title="Suma del valor de tus prendas vendidas">Valor Circular Generado</p>
             <p className="text-4xl font-serif font-bold text-accent">{formatCurrency(totalSalesValue)}</p>
           </div>
         </div>
 
-        {/* Listings Section */}
-        <div className="space-y-8">
-          <div className="flex items-center gap-8 border-b border-sand text-sm font-bold uppercase tracking-widest">
-            <button className="pb-4 border-b-2 border-primary text-primary">Mi Inventario ({myProducts?.length || 0})</button>
-            <button className="pb-4 text-muted hover:text-primary transition-colors opacity-40 cursor-not-allowed">Vendido</button>
-            <button className="pb-4 text-muted hover:text-primary transition-colors opacity-40 cursor-not-allowed">Borradores</button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {myProducts?.map(product => (
-              <div key={product.id} className="relative group">
-                <ProductCard 
-                  id={product.id}
-                  title={product.title}
-                  brand={product.brand}
-                  price={product.price}
-                  condition={product.condition}
-                  size={product.size}
-                  imageUrl={product.images?.[0]}
-                  status={product.status}
-                />
-                {/* Actions Overlay */}
-                <EditListingLink productId={product.id} />
-                <DeleteListingButton productId={product.id} title={product.title} />
-                {product.status === 'sold' && (
-                  <MarkAvailableButton productId={product.id} title={product.title} />
-                )}
-              </div>
-            ))}
-            
-            {/* Action Card: Upload More */}
-            <Link href="/dashboard/sell" className="aspect-[3/4] rounded-2xl border-2 border-dashed border-sand flex flex-col items-center justify-center p-6 text-center group cursor-pointer hover:border-primary/50 hover:bg-white transition-all">
-              <div className="w-12 h-12 bg-cream rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-              </div>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Vender otra prenda</p>
-            </Link>
-          </div>
-
-          {(!myProducts || myProducts.length === 0) && (
-            <div className="py-20 text-center bg-white/50 rounded-3xl border border-dashed border-sand">
-               <p className="text-muted italic">Aún no has publicado ninguna prenda en tu closet.</p>
-               <Link href="/dashboard/sell" className="text-primary font-bold underline mt-2 inline-block">¡Empieza ahora!</Link>
-            </div>
-          )}
-        </div>
+        {/* Listings Section (Client side Tabs) */}
+        <ProfileInventory products={myProducts || []} />
       </Container>
     </main>
   );

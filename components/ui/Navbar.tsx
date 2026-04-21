@@ -141,6 +141,12 @@ export const Navbar = () => {
 
               {session ? (
                 <div className="flex items-center gap-1 md:gap-3">
+                  { (session.user as any).role === 'admin' && (
+                    <Link href="/dashboard/admin/crm" className="group flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#008F6A] bg-[#00E0A6]/10 border border-[#00E0A6]/30 rounded-full px-3 py-2 hover:bg-[#00E0A6]/20 transition-all">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00E0A6] animate-pulse"></span>
+                      Admin
+                    </Link>
+                  )}
                   <Link href="/profile" className="text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-sand rounded-full px-3 py-2 transition-colors">Mi Closet</Link>
                   <button onClick={() => signOut({ callbackUrl: '/' })} className="text-[10px] font-bold uppercase tracking-widest text-secondary hover:underline">Salir</button>
                 </div>

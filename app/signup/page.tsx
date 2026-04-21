@@ -10,9 +10,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [plan, setPlan] = useState('starter');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,7 +24,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, plan }),
+        body: JSON.stringify({ email, password, name }),
       });
 
       const data = await res.json();
@@ -33,19 +33,35 @@ export default function SignupPage() {
         throw new Error(data.message || 'Error al registrarse');
       }
 
-      // Redirigir a la pasarela de pago (Mercado Pago)
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        // Fallback por seguridad
+      setSuccess(true);
+      setTimeout(() => {
         router.push('/login?registered=true');
-      }
+      }, 3000);
+
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <Container className="py-20 flex justify-center">
+          <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] editorial-shadow border border-sand/50 text-center">
+             <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-accent">
+               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+             </div>
+             <h2 className="text-3xl font-serif font-bold text-primary mb-4">¡Registro Exitoso!</h2>
+             <p className="text-muted font-medium mb-8">Tu cuenta ha sido creada y tienes <strong>2 créditos de IA</strong> de regalo para empezar.</p>
+             <p className="text-xs text-muted">Redirigiendo al inicio de sesión...</p>
+          </div>
+        </Container>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -56,7 +72,7 @@ export default function SignupPage() {
           <div className="bg-white p-10 rounded-[2.5rem] editorial-shadow border border-sand/50">
             <div className="text-center mb-10">
               <h1 className="text-4xl font-serif font-bold text-primary mb-3">Únete a la Revolución</h1>
-              <p className="text-muted font-medium italic">Comienza a vender en tu propio Closet de lujo.</p>
+              <p className="text-muted font-medium italic">Regístrate gratis y obtén 2 créditos de IA de regalo.</p>
             </div>
 
             {error && (
@@ -67,37 +83,6 @@ export default function SignupPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               
-              <div className="space-y-3 mb-6">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Elige tu Paquete de Vendedor</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div 
-                    onClick={() => setPlan('starter')}
-                    className={`cursor-pointer border p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all ${plan === 'starter' ? 'border-accent bg-accent/5 shadow-md scale-105' : 'border-sand hover:border-primary/30 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'}`}
-                  >
-                    <span className="font-bold text-primary mb-1 text-sm leading-tight">Starter</span>
-                    <span className="text-[10px] text-muted font-medium mb-1">50 Prendas <br/> 10 Desc. IA</span>
-                    <span className="text-xs font-serif font-bold text-accent">S/ 29</span>
-                  </div>
-                  <div 
-                    onClick={() => setPlan('pro')}
-                    className={`cursor-pointer border p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all relative ${plan === 'pro' ? 'border-primary bg-primary text-cream shadow-xl grayscale-0 opacity-100 scale-105' : 'border-sand hover:border-primary/30 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'}`}
-                  >
-                    {plan !== 'pro' && <span className="absolute -top-2 right-2 bg-accent text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase">Popular</span>}
-                    <span className={`font-bold mb-1 text-sm leading-tight ${plan === 'pro' ? 'text-cream' : 'text-primary'}`}>Pro</span>
-                    <span className={`text-[10px] font-medium mb-1 ${plan === 'pro' ? 'text-cream/80' : 'text-muted'}`}>200 Prendas <br/> 50 Desc. IA</span>
-                    <span className={`text-xs font-serif font-bold ${plan === 'pro' ? 'text-[#00E0A6]' : 'text-accent'}`}>S/ 69</span>
-                  </div>
-                  <div 
-                    onClick={() => setPlan('unlimited')}
-                    className={`cursor-pointer border p-4 rounded-2xl flex flex-col items-center justify-center text-center transition-all ${plan === 'unlimited' ? 'border-accent bg-accent/5 shadow-md scale-105' : 'border-sand hover:border-primary/30 grayscale opacity-60 hover:grayscale-0 hover:opacity-100'}`}
-                  >
-                    <span className="font-bold text-primary mb-1 text-sm leading-tight">Ilimitado</span>
-                    <span className="text-[10px] text-muted font-medium mb-1">∞ Prendas <br/> 200 Desc. IA</span>
-                    <span className="text-xs font-serif font-bold text-accent">S/ 129</span>
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Nombre Completo</label>
                 <input 
@@ -139,7 +124,7 @@ export default function SignupPage() {
                 type="submit"
                 className="w-full py-5 bg-primary text-cream rounded-full text-[11px] font-bold uppercase tracking-[0.3em] overflow-hidden relative group"
               >
-                <span className="relative z-10">{isLoading ? 'Procesando...' : 'Pagar y Crear mi Cuenta'}</span>
+                <span className="relative z-10">{isLoading ? 'Procesando...' : 'Crear mi Cuenta Gratis'}</span>
                 <div className="absolute inset-0 bg-accent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
               </button>
             </form>
@@ -156,7 +141,7 @@ export default function SignupPage() {
 
           <div className="mt-10 text-center px-10">
             <p className="text-[10px] text-muted leading-relaxed">
-              Al registrarte, aceptas convertirte en parte de una comunidad enfocada en la sustentabilidad y el consumo consciente.
+              La carga de prendas es ilimitada. Los créditos de IA se aplican al análisis automático de tus fotos.
             </p>
           </div>
         </div>

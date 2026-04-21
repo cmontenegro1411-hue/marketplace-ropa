@@ -29,29 +29,47 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `Eres un experto en moda vintage y segunda mano especializado en el mercado peruano. Analizá la imagen de la prenda y devolvé ÚNICAMENTE un JSON válido con esta estructura exacta, sin markdown, sin explicaciones, solo el JSON:
+const SYSTEM_PROMPT = `Eres una consultora de moda de lujo y experta en reventa circular para el mercado peruano. Tu objetivo es ayudar al usuario a vender su prenda lo más rápido posible (estrategia de rotación) mediante un catálogo profesional.
+
+Analizá la imagen y devolvé ÚNICAMENTE un JSON con esta estructura exacta:
 {
-  "titulo": "título SEO optimizado máximo 80 caracteres, incluir marca si visible",
-  "descripcion": "descripción de 150 a 300 palabras, mencionar material, estilo, época, cómo combinarlo",
-  "marca": "nombre de marca detectada o null si no se ve claramente",
+  "titulo": "Título SEO: Marca + Prenda + Color + Detalle (máx 70 caracteres)",
+  "descripcion": "Storytelling persuasivo: Comienza con un gancho sobre la calidad/diseño. Describe el material, por qué es una pieza esencial y termina resaltando su valor sostenible.",
+  "marca": "marca detectada o null",
   "confianza_marca": 0.0,
   "categoria": "Mujer | Hombre | Niños | Accesorios | Calzado",
-  "subcategoria": "subcategoría específica: Vestido, Pantalón, Blusa, Camisa, etc.",
-  "color": "color principal descriptivo",
-  "material": "material estimado",
-  "estilo": ["array de hasta 4 estilos"],
+  "tipo_prenda": "Nombre común",
+  "color": "Color descriptivo",
+  "material": "Material estimado (ej: Algodón pima, Cuero vegano)",
+  "vendedor_recomendacion": "string (consejo para venderlo más rápido)",
+  "modelo": "string (ej: Aviator, Air Force 1, Wayfarer) o nulo si no se detecta",
+  "estilo": ["mínimo 3 etiquetas de estilo"],
   "condicion": "nuevo_con_etiqueta | muy_buen_estado | buen_estado | con_señales_de_uso",
   "precio_sugerido": 0,
   "precio_rango": { "min": 0, "max": 0 },
-  "hashtags_instagram": ["hasta 12 hashtags sin el # en español e inglés"],
-  "keywords_busqueda": ["hasta 7 palabras clave para búsqueda"],
-  "plataforma_ideal": "depop | poshmark | vinted | mercari",
+  "hashtags_instagram": ["ModaCircular", "Sostenibilidad", "ClosetSale", "más 5 relevantes (SIN el #)"],
+  "keywords_busqueda": ["7 términos clave"],
+  "plataforma_ideal": "vinted | depop | poshmark",
   "advertencias": []
 }
-REGLAS:
-- precio_sugerido y precio_rango en SOLES PERUANOS (S/) acordes al mercado de segunda mano peruano.
-- Si confianza_marca < 0.7: poner null en "marca" y agregar "Verificá la etiqueta de marca" en advertencias.
-- NUNCA inventar marcas ni datos no visibles en la imagen.`;
+
+BAREMOS RETAIL (REFERENCIA PERÚ):
+- DISEÑADOR LOCAL/BOUTIQUE: S/ 900.
+- ACCESORIOS PREMIUM: S/ 650.
+- ZAPATILLAS PREMIUM: S/ 500.
+- PREMIUM MALL: S/ 350.
+- FAST FASHION: S/ 180.
+
+TASACIÓN MATEMÁTICA (REGLA FIJA):
+- 'nuevo_con_etiqueta': 70% del Retail.
+- 'muy_buen_estado': 50% del Retail.
+- 'buen_estado': 35% del Retail.
+- 'con_señales_de_uso': 20% del Retail.
+
+REGLAS CRÍTICAS:
+- 'categoria' DEBE ser uno de: "Mujer", "Hombre", "Niños", "Accesorios", "Calzado".
+- El tono debe ser elegante pero accesible.
+- No inventar marcas; si no es claro poner null.`;
 
 interface GPTResult {
   parsed: Record<string, unknown>;
@@ -122,15 +140,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Verificar créditos (sin descontarlos todavía)
+    // 3. Verificar créditos y conexión Mercado Pago
     const creditInfo = await getOrCreateCredits(userId);
-    if (creditInfo.plan !== 'unlimited' && creditInfo.credits_remaining <= 0) {
+    
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('mp_access_token')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = (session.user as any)?.role === 'admin';
+    const isMPConnected = !!userData?.mp_access_token;
+    const isBypassEnabled = process.env.ALLOW_DEBUG_BYPASS === 'true' || process.env.NEXT_PUBLIC_ALLOW_DEBUG_BYPASS === 'true';
+
+    // 🔴 BLOQUEO OBLIGATORIO: Si no es admin y no tiene MP, bloqueamos siempre (a menos que bypass esté activo).
+    if (!isAdmin && !isMPConnected && !isBypassEnabled) {
       return NextResponse.json(
         {
-          error: 'No tenés créditos disponibles este mes. Actualizá tu plan para continuar.',
+          error: 'Atención: Para usar la IA y publicar prendas es OBLIGATORIO vincular tu cuenta de Mercado Pago en tu perfil. Esto garantiza que puedas recibir tus pagos de forma automática.',
           credits: creditInfo,
+          needsMP: true
         },
         { status: 402 }
+      );
+    }
+
+    // 4. Validar saldo estricto
+    const hasCredits = isAdmin || creditInfo.plan === 'unlimited' || creditInfo.credits_remaining > 0;
+
+    // Ya NO permitimos paso por 'canUseOnDemand' si no hay saldo. 
+    // El sistema debe forzar al usuario a comprar un pack de créditos.
+    if (!hasCredits) {
+      return NextResponse.json(
+        { 
+          error: 'Atención: Has agotado tus créditos gratuitos. Para seguir analizando prendas debes comprar un pack de créditos.',
+          errorCode: 'CREDITS_EXHAUSTED',
+          credits: creditInfo 
+        },
+        { status: 403 }
       );
     }
 
@@ -193,8 +240,8 @@ export async function POST(req: NextRequest) {
       result.advertencias = advertencias;
     }
 
-    // 8. Descontar crédito SOLO en éxito
-    await deductCredit(userId);
+    // 8. Descontar crédito SOLO en éxito y obtener tipo de uso (Bypass admin)
+    const aiUsageType = isAdmin ? 'free' : await deductCredit(userId);
 
     // 9. Loguear generación
     await supabaseAdmin
@@ -214,7 +261,12 @@ export async function POST(req: NextRequest) {
     // 10. Obtener créditos actualizados
     const updatedCredits = await getOrCreateCredits(userId);
 
-    return NextResponse.json({ success: true, data: result, credits: updatedCredits });
+    return NextResponse.json({ 
+      success: true, 
+      data: result, 
+      credits: updatedCredits,
+      ai_usage_type: aiUsageType 
+    });
   } catch (error: unknown) {
     // Log del intento fallido (ignorar errores de logging)
     if (userId) {

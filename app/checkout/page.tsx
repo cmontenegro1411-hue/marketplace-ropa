@@ -7,6 +7,11 @@ import { useCart } from '@/context/CartContext';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { completePurchase } from '@/app/actions/product-actions';
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+
+if (process.env.NEXT_PUBLIC_MP_PUBLIC_KEY) {
+  initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY);
+}
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
@@ -18,37 +23,71 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    emailConfirm: '', // Nuevo campo para validación
     buyer_phone: '',
     address: '',
   });
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
     setError(null);
-
     try {
-      // Obtenemos los IDs de todos los productos en el carrito
-      const productIds = cart.map(item => item.id);
-
-      // *** LA ACCIÓN REAL: Actualiza status='sold' + comprador en Supabase ***
-      const result = await completePurchase(productIds, formData);
-
-      if (!result.success) {
-        setError(result.error || 'Error al procesar la compra.');
-        setIsProcessing(false);
-        return;
+      // Nueva validación de email
+      if (formData.email !== formData.emailConfirm) {
+        throw new Error('Los correos electrónicos no coinciden.');
       }
 
-      // Solo si la BD respondió OK, guardamos contactos, limpiamos el carrito y mostramos éxito
-      if (result.contacts) {
-        setContacts(result.contacts);
-      }
-      clearCart();
-      setIsSuccess(true);
+      const response = await fetch('/api/checkout/preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          items: cart, 
+          buyerInfo: formData 
+        }),
+      });
 
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error al crear la preferencia');
+
+      setPreferenceId(data.id);
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error inesperado.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleBypassPurchase = async () => {
+    setIsProcessing(true);
+    setError(null);
+
+    // Validación manual de Bypass antes de proceder
+    if (!formData.name || !formData.email || !formData.buyer_phone) {
+      setError("Por favor completa Nombre, Email y WhatsApp antes de simular la compra.");
+      setIsProcessing(false);
+      return;
+    }
+
+    if (formData.email !== formData.emailConfirm) {
+      setError("Los correos electrónicos no coinciden.");
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      const result = await completePurchase(cart.map(i => i.id), formData);
+      if (result.success) {
+        setIsSuccess(true);
+        setContacts(result.contacts || []);
+        clearCart();
+      } else {
+        throw new Error(result.error || 'Error en Bypass');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -83,7 +122,7 @@ export default function CheckoutPage() {
                          <p className="text-[10px] uppercase tracking-widest text-muted">{seller.productCount} prendas • S/ {seller.totalAmount.toLocaleString()}</p>
                        </div>
                        <div className="bg-[#25D366] text-white p-2.5 rounded-full group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0A12 12 0 000 12c0 2.112.553 4.218 1.635 6.06L.01 24l6.096-1.597A11.964 11.964 0 0011.996 24 12 12 0 0024 12 12 12 0 0011.996 0zm6.545 17.15c-.292.833-1.42 1.574-2.193 1.616-.628.03-1.428-.15-2.527-.604-4.216-1.745-6.936-6.074-7.143-6.353-.207-.278-1.705-2.274-1.705-4.34 0-2.067 1.07-3.085 1.455-3.5.353-.38 1.05-.595 1.536-.595.143 0 .27.006.38.013.38.018.57.037.82.639.317.763 1.082 2.65 1.176 2.842.095.192.16.417.065.61-.095.192-.143.313-.284.475-.14.162-.294.354-.423.493-.143.14-.294.293-.13.578.163.284.723 1.198 1.55 1.936 1.066.953 1.956 1.25 2.15 1.346.195.096.31.082.427-.053.116-.135.5-58.58-.727.784-.81.282-.027 1.306-2.5 1.44-4.887 2.05zm0 0"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0A12 12 0 000 12c0 2.112.553 4.218 1.635 6.06L.01 24l6.096-1.597A11.964 11.964 0 0011.996 24 12 12 0 0024 12 12 0 0011.996 0zm6.545 17.15c-.292.833-1.42 1.574-2.193 1.616-.628.03-1.428-.15-2.527-.604-4.216-1.745-6.936-6.074-7.143-6.353-.207-.278-1.705-2.274-1.705-4.34 0-2.067 1.07-3.085 1.455-3.5.353-.38 1.05-.595 1.536-.595.143 0 .27.006.38.013.38.018.57.037.82.639.317.763 1.082 2.65 1.176 2.842.095.192.16.417.065.61-.095.192-.143.313-.284.475-.14.162-.294.354-.423.493-.143.14-.294.293-.13.578.163.284.723 1.198 1.55 1.936 1.066.953 1.956 1.25 2.15 1.346.195.096.31.082.427-.053.116-.135.5-58.58-.727.784-.81.282-.027 1.306-2.5 1.44-4.887 2.05zm0 0"/></svg>
                        </div>
                     </a>
                   )
@@ -117,10 +156,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // Número de la plataforma (o del vendedor si lo tuvieramos) para armar el mensaje de WhatsApp
-  const contactWhatsApp = "51999888777"; 
-  const whatsappMessage = encodeURIComponent(`¡Hola! Acabo de reservar prendas en la plataforma y requiero coordinar la entrega y el pago contraentrega.`);
-
   return (
     <div className="min-h-screen bg-cream">
       <Navbar />
@@ -129,10 +164,10 @@ export default function CheckoutPage() {
         <div className="max-w-4xl mx-auto">
           <header className="mb-12 text-center">
              <div className="inline-block px-4 py-1.5 border border-primary/20 rounded-full mb-4 bg-white">
-               <span className="text-primary font-bold tracking-[0.5em] uppercase text-[9px]">Reserva Sin Compromiso Analógico</span>
+               <span className="text-primary font-bold tracking-[0.5em] uppercase text-[9px]">Pago 100% Seguro</span>
             </div>
-            <h1 className="text-4xl font-serif font-bold text-primary mb-2">Separa tus prendas</h1>
-            <p className="text-muted italic max-w-lg mx-auto">Ninguna tarjeta es requerida. Reserva las prendas para que nadie más pueda tomarlas y coordina la contraentrega directo con el vendedor.</p>
+            <h1 className="text-4xl font-serif font-bold text-primary mb-2">Checkout P2P Escrow</h1>
+            <p className="text-muted italic max-w-lg mx-auto">Ingresa tus datos y procesa el pago a través de Mercado Pago. Los fondos se liberarán al vendedor sólo cuando indiques conformidad de recepción.</p>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12">
@@ -167,14 +202,18 @@ export default function CheckoutPage() {
                     <input
                       required
                       type="tel"
+                      pattern="[0-9]*"
                       placeholder="Ej. 999888777"
                       className="w-full bg-cream/30 border border-sand rounded-2xl py-3 px-4 focus:ring-1 focus:ring-primary outline-none"
                       value={formData.buyer_phone}
-                      onChange={(e) => setFormData({...formData, buyer_phone: e.target.value})}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, ''); // Solo números
+                        setFormData({...formData, buyer_phone: val});
+                      }}
                     />
                   </div>
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Email para notificaciones</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Email para recibo</label>
                     <input
                       required
                       type="email"
@@ -184,44 +223,84 @@ export default function CheckoutPage() {
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                     />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-2">Confirmar Email</label>
+                    <input
+                      required
+                      type="email"
+                      placeholder="Repite tu correo"
+                      className={`w-full bg-cream/30 border border-sand rounded-2xl py-3 px-4 focus:ring-1 outline-none ${
+                        formData.emailConfirm && formData.email !== formData.emailConfirm 
+                        ? 'border-red-400 focus:ring-red-400' 
+                        : 'focus:ring-primary'
+                      }`}
+                      value={formData.emailConfirm}
+                      onChange={(e) => setFormData({...formData, emailConfirm: e.target.value})}
+                    />
+                    {formData.emailConfirm && formData.email !== formData.emailConfirm && (
+                      <p className="text-[9px] text-red-500 font-bold ml-2 uppercase">Los correos no coinciden</p>
+                    )}
+                  </div>
                 </div>
               </section>
 
               <section className="space-y-4">
                  <div className="flex items-center gap-3 border-b border-sand pb-4">
                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-accent text-white font-bold">2</span>
-                     <h2 className="text-xl font-serif font-bold text-primary">Método de Pago</h2>
+                     <h2 className="text-xl font-serif font-bold text-primary">Método de Pago Seguro</h2>
                  </div>
-                 
-                <div className="bg-[#00E0A6]/10 p-6 rounded-2xl border border-[#00E0A6]/30">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center shadow-sm">
-                        <span className="text-[#00E0A6] font-bold text-xs">P2P</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-bold text-primary">Coordinación Directa / Contraentrega</span>
-                      <span className="text-xs text-muted">Acepta Yape, Plin o Efectivo según acuerdes.</span>
-                    </div>
-                  </div>
-                </div>
               </section>
 
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full py-5 bg-primary text-cream rounded-full text-base font-bold uppercase tracking-widest shadow-xl hover:bg-primary/90 hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
-              >
-                {isProcessing
-                  ? '⏳ Separando prendas en la base de datos...'
-                  : `Reservar Ahora por S/ ${totalPrice.toLocaleString()}`
-                }
-              </button>
+              {preferenceId ? (
+                <div className="animate-in fade-in zoom-in duration-500">
+                  <Wallet 
+                    preferenceId={preferenceId} 
+                    customization={{ 
+                      visual: { 
+                        buttonBackground: 'black',
+                        borderRadius: '24px',
+                      }
+                    } as any} 
+                  />
+                  <p className="text-[10px] text-center text-muted mt-4 uppercase tracking-widest">
+                    Pago 100% seguro procesado por Mercado Pago
+                  </p>
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full py-5 bg-primary text-cream rounded-full text-base font-bold uppercase tracking-widest shadow-xl hover:bg-primary/90 hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
+                >
+                  {isProcessing
+                    ? '⏳ Preparando pasarela segura...'
+                    : `Proceder al Pago · S/ ${totalPrice.toLocaleString()}`
+                  }
+                </button>
+              )}
+
+              {/* OPCIÓN BYPASS (SOLO DESARROLLO) */}
+              {process.env.NEXT_PUBLIC_ALLOW_DEBUG_BYPASS === 'true' && (
+                <div className="pt-4 border-t border-dashed border-sand">
+                  <button
+                    type="button"
+                    onClick={handleBypassPurchase}
+                    disabled={isProcessing}
+                    className="w-full py-4 bg-accent/10 text-accent border-2 border-accent border-dashed rounded-full text-xs font-bold uppercase tracking-widest hover:bg-accent/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    🧪 SIMULAR COMPRA SIN PAGO (BYPASS MP)
+                  </button>
+                  <p className="text-[9px] text-center text-accent mt-2 font-mono uppercase">
+                    Modo Debug Activo: Salta la pasarela y procesa directo
+                  </p>
+                </div>
+              )}
             </form>
 
             {/* RESUMEN LATERAL */}
             <aside className="space-y-6 h-fit sticky top-32">
               <div className="bg-sand/20 rounded-3xl p-6 border border-sand/50">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Resumen de Reserva ({cart.length} prendas)</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Tu carrito ({cart.length} prendas)</h3>
                 <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 mb-4">
                   {cart.map(item => (
                     <div key={item.id} className="flex gap-3">

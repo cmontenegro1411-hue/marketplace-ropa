@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { uploadMultipleImagesViaAPI } from '@/lib/storage';
 import { createListing } from '@/app/actions/product-actions';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,7 @@ export interface AIResult {
   marca: string | null;
   confianza_marca: number;
   categoria: string;
-  subcategoria: string;
+  tipo_prenda: string; // Renombrado de subcategoria
   color: string;
   material: string;
   estilo: string[];
@@ -22,12 +22,16 @@ export interface AIResult {
   keywords_busqueda: string[];
   plataforma_ideal: string;
   advertencias: string[];
+  modelo?: string;
 }
+
+const CATEGORIES = ['Mujer', 'Hombre', 'Niños', 'Accesorios', 'Calzado'];
 
 interface ListingResultProps {
   result: AIResult;
   imageFile: File;
   onReset: () => void;
+  aiUsageType?: 'free' | 'prepaid' | 'on_demand';
 }
 
 const CONDITION_MAP: Record<string, string> = {
@@ -44,16 +48,73 @@ const PLATFORM_ICONS: Record<string, string> = {
   mercari:  '📦',
 };
 
-export const ListingResult = ({ result, imageFile, onReset }: ListingResultProps) => {
+export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: ListingResultProps) => {
   const router = useRouter();
   const [form, setForm] = useState<AIResult>({ ...result });
   const [size, setSize] = useState('');
   const [newHashtag, setNewHashtag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [suggestedUpdate, setSuggestedUpdate] = useState<{ precio_sugerido: number; precio_rango: { min: number; max: number } } | null>(null);
+  const [isRecalculating, setIsRecalculating] = useState(false);
+  const lastStateRef = useRef({ brand: form.marca, type: form.tipo_prenda, condition: form.condicion });
 
   const updateField = <K extends keyof AIResult>(key: K, value: AIResult[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  // Lógica de Smart Pricing Reactivo
+  useEffect(() => {
+    // Si no hay tipo de prenda, no podemos tasar
+    if (!form.tipo_prenda) return;
+
+    // Al cambiar cualquier valor clave, limpiamos sugerencias viejas de inmediato para evitar confusión
+    setSuggestedUpdate(null);
+
+    const timer = setTimeout(async () => {
+      setIsRecalculating(true);
+      try {
+        const response = await fetch('/api/listings/recalculate-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brand: form.marca || 'Genérico',
+            modelo: form.modelo || '',
+            tipo_prenda: form.tipo_prenda,
+            condicion: form.condicion,
+            categoria: form.categoria,
+            current_price: form.precio_sugerido
+          })
+        });
+
+        const json = await response.json();
+        if (json.success) {
+          // Actualizar confianza de marca si viene de la IA
+          if (json.data.confianza_marca !== undefined) {
+            updateField('confianza_marca', json.data.confianza_marca);
+          }
+
+          // Si el precio devuelto es sustancialmente distinto al actual, mostramos sugerencia
+          if (Math.round(json.data.precio_sugerido) !== Math.round(form.precio_sugerido)) {
+            setSuggestedUpdate(json.data);
+          }
+        }
+      } catch (err) {
+        console.error('Smart Pricing Error:', err);
+      } finally {
+        setIsRecalculating(false);
+      }
+    }, 600); // Rápida respuesta
+
+    return () => clearTimeout(timer);
+  }, [form.marca, form.modelo, form.tipo_prenda, form.condicion, form.categoria]);
+
+  const applySuggestedPrice = () => {
+    if (suggestedUpdate) {
+      updateField('precio_sugerido', suggestedUpdate.precio_sugerido);
+      updateField('precio_rango', suggestedUpdate.precio_rango);
+      setSuggestedUpdate(null);
+    }
+  };
 
   const addHashtag = () => {
     const tag = newHashtag.trim().replace(/^#/, '');
@@ -103,6 +164,7 @@ export const ListingResult = ({ result, imageFile, onReset }: ListingResultProps
         description: form.descripcion,
         price:       form.precio_sugerido,
         images:      imageUrls,
+        aiUsageType: aiUsageType,
       });
 
       if (res.success) {
@@ -121,8 +183,11 @@ export const ListingResult = ({ result, imageFile, onReset }: ListingResultProps
   const conditionLabel = CONDITION_MAP[form.condicion] || form.condicion;
   const confidencePct = Math.round((form.confianza_marca ?? 0) * 100);
 
+  const isLowConfidence = (form.confianza_marca ?? 1) < 0.4;
+  const isBoutiquePotential = form.marca?.toLowerCase().includes('trich') || form.modelo?.toLowerCase().includes('heart');
+
   return (
-    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
       {/* Header: Título + badges */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-sand space-y-4">
@@ -144,8 +209,8 @@ export const ListingResult = ({ result, imageFile, onReset }: ListingResultProps
           className="w-full text-base font-bold text-primary bg-cream/30 border border-sand rounded-2xl px-4 py-3 focus:border-primary outline-none"
         />
 
-        {/* Marca */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Marca y Categoría */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Marca</label>
             <div className="flex items-center gap-2">
@@ -168,11 +233,33 @@ export const ListingResult = ({ result, imageFile, onReset }: ListingResultProps
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Subcategoría</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Modelo (Opcional)</label>
             <input
               type="text"
-              value={form.subcategoria}
-              onChange={(e) => updateField('subcategoria', e.target.value)}
+              value={form.modelo ?? ''}
+              onChange={(e) => updateField('modelo', e.target.value)}
+              placeholder="Ej: Aviator, Air Force 1"
+              className="w-full bg-cream/30 border border-sand rounded-xl px-3 py-2.5 text-sm focus:border-primary outline-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Categoría</label>
+            <select
+              value={form.categoria}
+              onChange={(e) => updateField('categoria', e.target.value)}
+              className="w-full bg-cream/30 border border-sand rounded-xl px-3 py-2.5 text-sm focus:border-primary outline-none appearance-none"
+            >
+              {CATEGORIES.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Tipo de Prenda</label>
+            <input
+              type="text"
+              value={form.tipo_prenda}
+              onChange={(e) => updateField('tipo_prenda', e.target.value)}
               className="w-full bg-cream/30 border border-sand rounded-xl px-3 py-2.5 text-sm focus:border-primary outline-none"
             />
           </div>
@@ -199,6 +286,39 @@ export const ListingResult = ({ result, imageFile, onReset }: ListingResultProps
             <p className="font-bold text-muted">Rango sugerido:</p>
             <p>S/ {form.precio_rango.min} — S/ {form.precio_rango.max}</p>
           </div>
+
+          {/* Sugerencia de la IA */}
+          {suggestedUpdate && !isRecalculating && (
+            <button
+              onClick={applySuggestedPrice}
+              className={`flex flex-col items-start gap-1 p-3 rounded-2xl border transition-all duration-300 text-left
+                ${isLowConfidence 
+                  ? 'bg-amber-50 border-amber-200 hover:bg-amber-100 ring-1 ring-amber-100' 
+                  : 'bg-primary/5 border-primary/20 hover:bg-primary/10'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">✨</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                  {isLowConfidence ? 'Verificar Tasación' : 'Precio X Marca'}
+                </span>
+              </div>
+              <div className="text-sm font-bold text-primary">
+                Actualizar a S/ {Math.round(suggestedUpdate.precio_sugerido)}
+              </div>
+              {isLowConfidence && (
+                <div className="text-[9px] text-amber-700 mt-1 leading-tight max-w-[140px]">
+                  Baja confianza en marca. Verifica que el nombre sea correcto.
+                </div>
+              )}
+            </button>
+          )}
+
+          {isRecalculating && (
+             <div className="flex items-center gap-2 bg-secondary/5 px-3 py-2 rounded-xl border border-secondary/10 animate-pulse">
+               <div className="w-2.5 h-2.5 bg-secondary rounded-full animate-bounce" />
+               <span className="text-[10px] text-secondary font-bold uppercase tracking-widest">Recalculando precio...</span>
+             </div>
+          )}
         </div>
       </div>
 

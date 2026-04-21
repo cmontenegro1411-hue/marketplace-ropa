@@ -18,7 +18,7 @@ export const CreditsCounter = () => {
   useEffect(() => {
     if (!session?.user?.id) return;
 
-    fetch('/api/listings/credits')
+    fetch('/api/listings/credits', { cache: 'no-store' })
       .then((r) => r.json())
       .then((data: CreditInfo) => setCredits(data))
       .catch(console.error);
@@ -26,7 +26,8 @@ export const CreditsCounter = () => {
 
   if (!session || !credits) return null;
 
-  const isUnlimited = credits.plan === 'unlimited';
+  const isAdmin = (session?.user as any)?.role === 'admin';
+  const isUnlimited = credits.plan === 'unlimited' || isAdmin;
   const pct = isUnlimited ? 100 : (credits.credits_remaining / credits.credits_total) * 100;
   const isLow = !isUnlimited && pct <= 30;
   const isEmpty = !isUnlimited && credits.credits_remaining <= 0;
@@ -47,7 +48,7 @@ export const CreditsCounter = () => {
       <span>
         {isUnlimited
           ? '∞ créditos'
-          : `${credits.credits_remaining}/${credits.credits_total}`}
+          : `${credits.credits_used}/${credits.credits_total}`}
       </span>
     </Link>
   );

@@ -17,6 +17,14 @@ export async function POST(req: Request) {
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+    // 🟢 MODO DEBUG: SI ESTÁ ACTIVADO, SALTAMOS A MERCADO PAGO
+    if (process.env.ALLOW_DEBUG_BYPASS === 'true') {
+      console.log('--- [DEBUG MODE] Bypassing Mercado Pago for Credit Recharge ---');
+      return NextResponse.json({ 
+        init_point: `${baseUrl}/api/checkout/callback?status=success&user_id=${session.user.id}&package_id=${packageId}&payment_id=mock_recharge_${Date.now()}` 
+      });
+    }
+
     // 1. Create unique idempotency key or identifier
     const orderId = `order_${Date.now()}_${session.user.id}`;
 

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+
+export const dynamic = 'force-dynamic';
 import { getOrCreateCredits } from '@/lib/credits';
 
 export async function GET() {

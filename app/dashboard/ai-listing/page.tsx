@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/Container';
 import { PhotoUploader } from '@/components/ai-listing/PhotoUploader';
 import { ListingResult, type AIResult } from '@/components/ai-listing/ListingResult';
@@ -20,6 +20,10 @@ export default function AIListingPage() {
   const [credits, setCredits] = useState<CreditInfo | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isMPError, setIsMPError] = useState<boolean>(false);
+  const [isCreditError, setIsCreditError] = useState<boolean>(false);
+  const [aiUsageType, setAiUsageType] = useState<'free' | 'prepaid' | 'on_demand' | undefined>(undefined);
+  const [isBuying, setIsBuying] = useState<boolean>(false);
 
   /**
    * Convierte un File a base64 string (sin el prefijo data:...)
@@ -54,15 +58,20 @@ export default function AIListingPage() {
       const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.error || `Error ${response.status}`);
+        const error = new Error(json.error || `Error ${response.status}`);
+        (error as any).needsMP = json.needsMP;
+        (error as any).errorCode = json.errorCode;
+        throw error;
       }
 
       setResult(json.data as AIResult);
       setCredits(json.credits as CreditInfo);
+      setAiUsageType(json.ai_usage_type);
       setPageState('result');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error inesperado';
-      setErrorMessage(msg);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error inesperado');
+      setIsMPError(err.needsMP === true);
+      setIsCreditError(err.errorCode === 'CREDITS_EXHAUSTED');
       setPageState('error');
     }
   };
@@ -72,6 +81,51 @@ export default function AIListingPage() {
     setResult(null);
     setImageFile(null);
     setErrorMessage('');
+    setIsMPError(false);
+    setIsCreditError(false);
+  };
+
+  const handleBuyCredits = async () => {
+    setIsBuying(true);
+    try {
+      const response = await fetch('/api/listings/buy-credits', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        setCredits(data.credits);
+        handleReset();
+      } else {
+        alert(data.error || 'Error al comprar créditos');
+      }
+    } catch (err) {
+      alert('Error de conexión');
+    } finally {
+      setIsBuying(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        const response = await fetch('/api/listings/credits');
+        if (response.ok) {
+          const data = await response.json();
+          setCredits(data);
+        }
+      } catch (err) {
+        console.error('Error fetching credits:', err);
+      }
+    };
+    fetchCredits();
+  }, []);
+
+  const getPlanDisplayName = (planId: string) => {
+    switch (planId) {
+      case 'starter': return 'Plan Impulso';
+      case 'pro': return 'Plan Crecimiento';
+      case 'unlimited': return 'Plan Escala';
+      case 'free': return 'Plan de Prueba';
+      default: return 'Plan Mi Closet';
+    }
   };
 
   return (
@@ -172,12 +226,40 @@ export default function AIListingPage() {
                   {errorMessage}
                 </p>
               </div>
-              <button
-                onClick={handleReset}
-                className="bg-primary text-cream px-8 py-3 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-primary/90 transition-all"
-              >
-                Intentar de nuevo
-              </button>
+              {isMPError ? (
+                <Link
+                  href="/profile"
+                  className="bg-primary text-cream px-8 py-3 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-primary/90 transition-all inline-block"
+                >
+                  Afiliar Mercado Pago
+                </Link>
+              ) : isCreditError ? (
+                <div className="space-y-3 pt-2">
+                   <Link
+                    href="/pricing"
+                    className="w-full bg-primary text-cream px-8 py-4 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-primary/90 transition-all inline-block"
+                  >
+                    Ver Planes de Créditos
+                  </Link>
+                  <button
+                    onClick={handleBuyCredits}
+                    disabled={isBuying}
+                    className="w-full bg-secondary/10 text-secondary px-8 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-secondary/20 transition-all border border-secondary/20"
+                  >
+                    {isBuying ? 'Procesando...' : 'Debug: Simular Compra (+2)'}
+                  </button>
+                  <button onClick={handleReset} className="block w-full text-[10px] text-muted uppercase font-bold tracking-widest py-2">
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleReset}
+                  className="bg-primary text-cream px-8 py-3 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-primary/90 transition-all"
+                >
+                  Intentar de nuevo
+                </button>
+              )}
             </div>
           )}
 
@@ -187,14 +269,22 @@ export default function AIListingPage() {
               result={result}
               imageFile={imageFile}
               onReset={handleReset}
+              aiUsageType={aiUsageType}
             />
           )}
         </main>
 
         {/* Footer note */}
-        <p className="text-center text-[11px] text-muted mt-8">
-          Plan Free: 10 créditos/mes · Cada análisis consume 1 crédito
-        </p>
+        <div className="text-center mt-8 space-y-1">
+          <p className="text-[11px] font-bold text-primary uppercase tracking-widest">
+            {credits ? getPlanDisplayName(credits.plan) : 'Consultando plan...'}
+          </p>
+          <p className="text-[10px] text-muted">
+            {credits?.plan === 'unlimited' 
+              ? 'Tenés acceso ilimitado a la IA' 
+              : `Incluye ${credits?.credits_total || 0} análisis por mes · 1 crédito = 1 análisis`}
+          </p>
+        </div>
       </Container>
     </div>
   );

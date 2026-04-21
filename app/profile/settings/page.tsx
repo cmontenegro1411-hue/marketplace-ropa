@@ -156,8 +156,8 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                           <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between w-full sm:w-auto gap-4 sm:gap-6">
                             <div className="flex flex-col text-left sm:text-right w-full sm:w-auto">
                               <span className="text-lg font-serif font-bold text-primary">{formatCurrency(order.price)}</span>
-                              <span className={`text-[10px] w-fit sm:ml-auto font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-accent/10 text-accent`}>
-                                RESERVADO
+                              <span className={`text-[10px] w-fit sm:ml-auto font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-primary text-white`}>
+                                VENDIDO
                               </span>
                             </div>
                             

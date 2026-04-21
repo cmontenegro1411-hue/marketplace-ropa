@@ -116,7 +116,7 @@ const LoginForm = () => {
       </div>
 
       <p className="text-center text-sm text-muted font-medium">
-        ¿Aún no tienes cuenta? <Link href="/signup" className="font-bold text-primary hover:text-accent underline underline-offset-4 transition-colors">Crea una gratis</Link>
+        ¿Aún no tienes cuenta? <Link href="/signup" className="font-bold text-primary hover:text-accent underline underline-offset-4 transition-colors">Regístrate gratis y vende</Link>
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { payment } from '@/lib/mercadopago';
-import { addCredits } from '@/lib/credits';
+import { addCredits, migratePlan } from '@/lib/credits';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,13 +16,26 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL('/dashboard/credits?error=invalid_callback', req.url));
     }
 
-    try {
-      const paymentInfo = await payment.get({ id: payment_id });
-      if (paymentInfo.status !== 'approved') {
-         return NextResponse.redirect(new URL('/dashboard/credits?error=payment_not_approved', req.url));
+    // 🟢 MODO DEBUG: SI EL ID ES MOCK, SALTAMOS LA VALIDACIÓN DE MP
+    if (payment_id?.startsWith('mock_recharge_')) {
+      console.log('--- [DEBUG MODE] Accepting Mock Payment for Credits ---');
+    } else {
+      try {
+        const paymentInfo = await payment.get({ id: payment_id! });
+        if (paymentInfo.status !== 'approved') {
+           return NextResponse.redirect(new URL('/dashboard/credits?error=payment_not_approved', req.url));
+        }
+      } catch (e: any) {
+        console.error('[Callback] MP GET Payment error:', e.message);
+        // Si no podemos verificar pero no estamos en modo mock, por seguridad fallamos
+        return NextResponse.redirect(new URL('/dashboard/credits?error=verification_failed', req.url));
       }
-    } catch (e: any) {
-      console.error('[Callback] MP GET Payment error:', e.message);
+    }
+
+    // Identificar si es una migración de plan o una recarga simple
+    if (package_id.startsWith('plan_')) {
+      await migratePlan(user_id, package_id);
+      return NextResponse.redirect(new URL(`/profile?migration=success&plan=${package_id}`, req.url));
     }
 
     const packages: Record<string, { credits: number }> = {

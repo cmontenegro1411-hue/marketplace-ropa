@@ -1,79 +1,87 @@
-# 🧠 Proyecto: Marketplace Moda Circular - Cerebro de Desarrollo
+# 🧠 CEREBRO CENTRAL - Marketplace Moda Circular
 
-Este documento mantiene el estado actual, decisiones técnicas y próximos pasos de la plataforma Antigravity "Venta de Ropa de Segunda".
+## 0. METADATA Y ESTADO DEL SISTEMA
 
-## 📋 Estado Actual del Proyecto
-- **Frontend**: Full Next.js 16 (Turbopack) con sistema de diseño premium (Verde Oliva/Crema/Terracota).
-- **Moneda**: Sol Peruano (S/) en todo el sistema.
-- **Home**: Banner hero con categorías y sección de "Novedades".
-- **Búsqueda**: Grid interactivo con filtros laterales.
-- **Detalle de Producto**: Vista enfocada en la prenda con badges de confianza.
-- **Venta IA (Magic Listing)**: Formulario con botón de regreso, "multi-upload" y previsualización.
-- **Perfil de Usuario**: Dashboard con métricas de ventas reales (via Supabase), interfaz de edición de perfil (vía Server Actions) y navegación entre pestañas.
-- **Auth**: Sistema NextAuth v5 (Beta) activo con Credentials Provider funcional. Sesión persistente estable.
-- **Checkout**: Flujo completo conectado a Supabase — marca los productos como `sold` al confirmar.
-- **Ciclo de vida del producto**: `available` → `sold`. Bloqueado a nivel UI y server action.
+- **Versión Actual:** 1.4.0
+- **Fase de Desarrollo:** Refactorización de pasarela de pagos y UI (Modelo Escrow).
+- **Directiva del Orquestador:** Este documento es la única fuente de verdad. Antes de que un Agente actúe, debe leer sus responsabilidades y el estado actual de su dominio. Todo cambio debe ser consolidado aquí.
 
-## 🔑 Credenciales de Prueba
-- **Email**: `demo@modacircular.com`
-- **Password**: `password123`
-- **Nota**: El sistema redirige automáticamente a `/search` tras el login.
+## 1. ARQUITECTURA Y REGLAS GLOBALES
 
-## ⚙️ Infraestructura y Backend
-- **Server Actions**: `user-actions.ts` y `product-actions.ts` con las funciones:
-  - `createListing` — crea un producto en Supabase.
-  - `deleteListing` — elimina con validación de propiedad.
-  - `updateListing` — actualiza con validación de propiedad.
-  - `completePurchase` — **[NUEVO]** marca `status='sold'` en Supabase, con validación previa de disponibilidad para prevenir compras dobles.
-- **Supabase**:
-  - Cliente configurado en `lib/supabase.ts`.
-  - Storage Setup en `supabase_storage_setup.sql`.
-  - **Migración aplicada**: columna `status TEXT DEFAULT 'available'` + índice `idx_products_status` en tabla `products`.
+*Las decisiones aquí son inmutables a menos que el Arquitecto Principal las modifique.*
 
-## 🛠️ Decisiones Técnicas y Arquitectura Clave
-1. **Direct-to-Storage**: Imágenes directo a Supabase Storage.
-2. **Arquitectura de Pagos (Marketplace Escrow)**: Se estructuró a nivel procedimental cómo se retendrá y dividirá el dinero utilizando herramientas modernas. **-> [Ver Documento Detallado de Pagos](docs/ARQUITECTURA_PAGOS.md)**.
-3. **Optimización de UI del Perfil**: Interfaces que impactan mediante placeholders enriquecidos con métricas simuladas mientras no haya BD productiva.
-4. **CI/CD Implementado**: Despliegue automatizado y exitoso hacia Vercel, conectado directamente a GitHub.
-5. **Decisiones de UX (Lujo Minimalista)**: Retirado el botón redundante de "Registro" del menú de navegación.
-6. **Defense in Depth — Compra Doble**: El bloqueo de re-compra opera en dos capas: (1) UI deshabilita el botón si `status === 'sold'`; (2) el server action re-verifica disponibilidad en Supabase antes de ejecutar el UPDATE.
-7. **CTAs Contextuales Post-Compra**: Pantalla de éxito del checkout muestra "Ver Mi Closet" para usuarios logueados e "Ir al Inicio" para guests anónimos, usando `useSession()`.
+- **Stack Tecnológico:** Next.js 16 (Turbopack), Supabase (PostgreSQL), MercadoPago SDK, NextAuth v5 (Beta).
+- **Regla de Estilo:** Componentes funcionales. Tailwind CSS para UI premium (Verde Oliva/Crema/Terracota).
+- **Directiva Cero Alucinaciones:** Prohibido sugerir librerías fuera del stack sin justificación de costo/beneficio aprobada.
+- **Moneda:** Sol Peruano (S/) como estándar único.
 
-## 🎨 Componentes Clave
-| Componente | Archivo | Función |
-|---|---|---|
-| `AddToCartButton` | `components/product/AddToCartButton.tsx` | Añade al carrito. Muestra estado "Vendido" con lock icon si `status=sold` |
-| `CheckoutPage` | `app/checkout/page.tsx` | Flujo completo. Llama a `completePurchase` y muestra pantalla de éxito |
-| `CartContext` | `context/CartContext.tsx` | Persistencia en `localStorage`. Evita duplicados |
+## 2. DICCIONARIO DE DATOS (Core Entities)
 
-## 🗂️ Migraciones de BD Aplicadas
-| Fecha | Archivo | Descripción |
-|---|---|---|
-| 2026-04-11 | `docs/migrations/add_status_to_products.sql` | Agrega columna `status` + índice a tabla `products` |
+*Definiciones centrales para la integridad del sistema.*
 
-## 🚀 Próximos Pasos (Pendientes)
-1. **Conexión Pasarela**: Integrar la capa Escrow mencionada en la arquitectura de pagos (Mercado Pago o Stripe).
-2. **Sistema de Favoritos**: Tabla de `likes` y vista en el perfil.
-3. **Mensajería**: Implementar chat en tiempo real entre comprador y vendedor.
-4. **Historial de Compras**: Vista para el comprador de sus pedidos pasados.
-5. **Filtro de productos vendidos en catálogo**: Opcionalmente ocultar o mostrar al final los productos `sold`.
+- **Entidad `Prenda` (Products):** `{ id, estado_uso (1-5), precio, id_vendedor, fotos[], status ('available' | 'sold') }`
+- **Entidad `Transaccion`:** `{ id, id_comprador, id_prenda, estado_pago, fee_plataforma, status_escrow }`
+- **Entidad `Usuario`:** `{ id, credits_ia (saldo actual), status_auth, role ('admin' | 'seller') }`
+- **Entidad `PendingRegistration`:** `{ id, user_data, package_purchased, mp_preference_id }`
 
-## 🗄️ Historial de Logros Críticos
+## 3. ESTADOS DE DOMINIO (El Equipo Lean de 5 Agentes)
 
-- **[11 de Abril, 2026] - Ciclo de Vida de Producto Completo**:
-  - Checkout conectado a Supabase — `completePurchase()` server action marca `status='sold'`.
-  - Migración `add_status_to_products.sql` ejecutada en producción vía SQL Editor de Supabase.
-  - Bloqueo de re-compra en dos capas: UI (`AddToCartButton`) + validación server action.
-  - Pantalla de éxito post-compra con CTAs contextuales (guest vs. usuario logueado).
-  - Aviso "Esta prenda ya encontró dueño" con diseño premium (ícono candado, terracota, CTA a búsqueda).
-  - Eliminado el `alert()` ficticio — reemplazado por pantalla de confirmación real.
+### 3.1 Product Owner Senior (Negocio)
 
-- **[10 de Abril, 2026] - Fase MVP Online**:
-  - Limpieza de entorno y preparación de la base de código.
-  - Creación del Repositorio en GitHub (`marketplace-ropa`).
-  - Resolución en caliente (hotfixes) para Next.js 16/15:
-    - Se agregó `dotenv` a dependencias y se envolvió el `useSearchParams` de `/login/page.tsx` en un *Suspense Boundary* para burlar la nueva restricción `prerender-error` de Vercel.
-  - **Despliegue a Producción Completo:** El MVP ya sirve tráfico web bajo la arquitectura Serverless de Vercel 🚀.
+- **Responsabilidad:** Definir flujos funcionales, reglas de negocio y criterios de aceptación.
+- **Estado Actual:**
+  - Diseñando el flujo de **Retención de Pagos (Escrow)** y resolución de disputas C2C.
+  - Validando el modelo de monetización basado exclusivamente en eficiencia (IA) tras eliminar las membresías.
+- **Regla Maestra:** Si el flujo funcional no está claro aquí, el código resultante será basura.
 
----
-*Última actualización: 11 de Abril, 2026 — Ciclo de vida de producto: compra real conectada a Supabase*
+### 3.2 Arquitecto Principal Enterprise (Estructura y Datos)
+
+- **Responsabilidad:** Diseño de sistemas, seguridad (RLS), integraciones externas y consistencia de datos.
+- **Estado Actual:**
+  - Priorizando la configuración segura de `MP_ACCESS_TOKEN` y otros secretos de integración.
+  - Supervisando la arquitectura **Direct-to-Storage** para imágenes y el **Supabase Dual Client**.
+  - Validando soporte para flujo Escrow sin duplicidad transaccional.
+- **Regla Maestra:** Si el sistema no escala o el dato no es íntegro, la arquitectura ha fallado.
+
+### 3.3 Tech Lead Backend & DevOps (Lógica y Servidor)
+
+- **Responsabilidad:** Server Actions, Máquinas de Estado, APIs, DB y CI/CD (Vercel).
+- **Estado Actual:**
+  - Implementando la máquina de estados en `product-actions.ts`.
+  - Refactorizando `signup-callback` para asegurar la creación de usuarios post-pago.
+  - Manteniendo el enforcement estricto de créditos IA en `analyze/route.ts`.
+- **Regla Maestra:** El servidor debe impedir estados inválidos; si el sistema falla sin logs, la operación es deficiente.
+
+### 3.4 Tech Lead Frontend & UX/UI (Interfaz)
+
+- **Responsabilidad:** Vistas, componentes reutilizables, manejo de estado global (UI) y performance.
+- **Estado Actual:**
+  - Optimización final del **Magic Listing** (Venta IA) con soporte para campo **Modelo**.
+  - Implementación del **Motor de Tasación Algorítmica** (70%, 50%, 35%, 20%) para asegurar degradación coherente por estado.
+  - Añadido sistema de **Safeguards de Confianza** (Alertas ámbar si la IA duda de la marca detectada).
+  - Asegurando despliegue dinámico (`force-dynamic`) para evitar desincronización de créditos en la UI.
+- **Regla Maestra:** Si el usuario duda o la app parece congelada sin feedback, la interfaz ha fallado.
+
+### 3.5 QA Lead (Calidad)
+
+- **Responsabilidad:** Escenarios de prueba rigurosos, Happy Paths, Edge Cases y prevención de regresiones.
+- **Estado Actual:**
+  - Validando el ciclo de vida: `available` → `sold`.
+  - Preparando pruebas E2E para el flujo de registro completo: `signup` → `pago` → `callback` → `login`.
+- **Regla Maestra:** Lo que no tiene prueba validada en un entorno similar a producción, se asume que está roto.
+
+## 4. REGISTRO DE DEPRECACIONES Y ANTI-PATRONES (Cuarentena)
+
+- **[DEPRECADO v1.3.5]:** Pago directo al vendedor. El modelo de negocio ahora es **Retención (Escrow)**. Prohibido usar lógica de transferencia anterior.
+- **[DEPRECADO v1.4.0]:** Planes de membresía (Impulso, Crecimiento, Escala). El registro es libre e ilimitado; se monetizan solo los créditos de IA.
+- **[ERROR COMÚN]:** Mezclar correcciones visuales con lógica de negocio. Las tareas deben ser atómicas.
+- **[ALERTA]:** No usar `alert()` nativo; usar el sistema de pantallas de éxito/error diseñado en Next.js.
+
+## 5. CHANGELOG RECENTE
+
+- **[21-04-2026] - v1.5.0:** Implementación del **Motor de Tasación Algorítmica Estricta**. Integración del campo 'Modelo' en el listado y mejora de la cultura de marcas locales (Butrich/Diseñadores) en la IA.
+- **[20-04-2026] - v1.4.0:** Consolidación del equipo de agentes a modelo Lean (5 roles) y reestructuración del Cerebro.
+- **[18-04-2026]:** Implementación de bloqueo absoluto de créditos IA y corrección de caché en `CreditsCounter`.
+- **[17-04-2026]:** Pivot de modelo de negocio: Libertad total de vendedores + monetización vía eficiencia (IA).
+- **[15-04-2026]:** Implementación de Admin Dashboard interno para seguimiento de vendedores registrados.
+- **[10-04-2026]:** Despliegue inicial exitoso en Vercel (Fase MVP Online).

@@ -19,7 +19,7 @@ export default async function AIHistoryDashboard() {
   if (!session?.user?.id) redirect('/login');
 
   // Solo el Admin puede ver este panel
-  if (session.user.email !== process.env.ADMIN_EMAIL) {
+  if ((session.user as any).role !== 'admin') {
     redirect('/profile');
   }
 
