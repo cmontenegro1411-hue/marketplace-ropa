@@ -24,9 +24,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .single();
 
         if (error || !user) {
-          // Si el usuario no existe en la tabla, permitimos el demo para no bloquearte mientras pruebas
+          // Si el usuario no existe en la tabla, permitimos el demo con rol admin para pruebas
           if (credentials.email === "demo@modacircular.com" && credentials.password === "password123") {
-            return { id: "00000000-0000-0000-0000-000000000000", name: "Usuario Demo", email: "demo@modacircular.com" };
+            return { 
+              id: "00000000-0000-0000-0000-000000000000", 
+              name: "Usuario Demo", 
+              email: "demo@modacircular.com",
+              role: "admin" 
+            };
           }
           return null;
         }
@@ -39,17 +44,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!isPasswordCorrect) return null;
 
-        // 3. Forzar rol de admin para el usuario principal si es necesario
-        let userRole = user.role;
-        if (user.email === 'cmontenegro1411@gmail.com') {
-          userRole = 'admin';
+        // 3. Forzar rol de admin para el usuario principal o detectar de DB
+        let finalRole = user.role;
+        if (user.email === 'cmontenegro1411@gmail.com' || user.email === 'demo@modacircular.com') {
+          finalRole = 'admin';
         }
 
         return { 
           id: user.id, 
           name: user.name, 
           email: user.email,
-          role: userRole 
+          role: finalRole 
         };
       }
     }),
