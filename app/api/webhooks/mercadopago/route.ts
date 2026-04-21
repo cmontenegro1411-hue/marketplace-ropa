@@ -79,8 +79,39 @@ export async function POST(req: NextRequest) {
 
             // --- A. Email al Comprador (Resumen de Pago) ---
             if (buyerEmail) {
-              const itemsHtml = fullProducts.map(p => `<li><strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}</li>`).join('');
-              
+              const itemsWithTokens = [];
+              for (const p of fullProducts) {
+                const { data: savedItem } = await supabaseAdmin
+                  .from('order_items')
+                  .select('id')
+                  .eq('product_id', p.id)
+                  .eq('order_id', order?.id || '')
+                  .single();
+                
+                const token = savedItem ? generateConfirmToken(savedItem.id, order!.id) : '';
+                itemsWithTokens.push({ ...p, token });
+              }
+
+              const itemsHtml = itemsWithTokens.map(p => {
+                return `
+                  <li style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #D4A373; background: #fff; border-radius: 8px;">
+                    <strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}<br/>
+                    <div style="margin-top: 12px; display: flex; gap: 10px;">
+                      <div style="display: inline-block; vertical-align: top; width: 45%;">
+                        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/confirm/${p.token}" 
+                           style="display: inline-block; background: #2F3C2C; color: white; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmar Recibido</a>
+                        <p style="margin: 5px 0 0 0; font-size: 9px; color: #666; line-height: 1.2;">Usa esta opción si ya tienes tu prenda y todo está perfecto. Libera el pago al vendedor.</p>
+                      </div>
+                      <div style="display: inline-block; vertical-align: top; width: 45%; margin-left: 5%;">
+                        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/refund-request/${p.token}" 
+                           style="display: inline-block; color: #cc3333; font-size: 11px; text-decoration: underline; font-weight: bold; text-transform: uppercase;">Solicitar Devolución</a>
+                        <p style="margin: 5px 0 0 0; font-size: 9px; color: #cc3333; line-height: 1.2;">¿El producto no es lo que esperabas? Bloquea el pago aquí para gestionar la devolución.</p>
+                      </div>
+                    </div>
+                  </li>
+                `;
+              }).join('');
+
               await sendEmail({
                 to: [{ email: buyerEmail, name: buyerName }],
                 subject: `✅ ¡Pago confirmado! Tu pedido en Moda Circular`,
@@ -91,28 +122,7 @@ export async function POST(req: NextRequest) {
                     <div style="background: #fdfaf6; padding: 20px; border-radius: 15px; margin: 20px 0;">
                       <h3 style="margin-top: 0; color: #4a5d4e;">Resumen del Pedido:</h3>
                       <ul style="padding-left: 0; list-style: none;">
-                        ${fullProducts.map(p => {
-                          const { data: savedItem } = await supabaseAdmin.from('order_items').select('id').eq('product_id', p.id).eq('order_id', order?.id || '').single();
-                          const token = savedItem ? generateConfirmToken(savedItem.id, order!.id) : '';
-                          
-                          return `
-                            <li style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #D4A373; background: #fff; border-radius: 8px;">
-                              <strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}<br/>
-                              <div style="margin-top: 12px; display: flex; gap: 10px;">
-                                <div style="display: inline-block; vertical-align: top; width: 45%;">
-                                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/confirm/${token}" 
-                                     style="display: inline-block; background: #2F3C2C; color: white; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmar Recibido</a>
-                                  <p style="margin: 5px 0 0 0; font-size: 9px; color: #666; line-height: 1.2;">Usa esta opción si ya tienes tu prenda y todo está perfecto. Libera el pago al vendedor.</p>
-                                </div>
-                                <div style="display: inline-block; vertical-align: top; width: 45%; margin-left: 5%;">
-                                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/refund-request/${token}" 
-                                     style="display: inline-block; color: #cc3333; font-size: 11px; text-decoration: underline; font-weight: bold; text-transform: uppercase;">Solicitar Devolución</a>
-                                  <p style="margin: 5px 0 0 0; font-size: 9px; color: #cc3333; line-height: 1.2;">¿El producto no es lo que esperabas? Bloquea el pago aquí para gestionar la devolución.</p>
-                                </div>
-                              </div>
-                            </li>
-                          `;
-                        }).join('')}
+                        ${itemsHtml}
                       </ul>
                       <p style="font-size: 18px; font-weight: bold; border-top: 1px solid #e0dcd0; pt: 10px;">Total Pago: S/ ${paymentData.transaction_amount}</p>
                     </div>

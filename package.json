@@ -10,16 +10,18 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@notionhq/client": "^5.18.0",
+    "@mercadopago/sdk-react": "0.0.19",
     "@stripe/react-stripe-js": "^6.1.0",
     "@stripe/stripe-js": "^9.1.0",
     "@supabase/supabase-js": "^2.102.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.1",
+    "lucide-react": "^0.460.0",
     "mercadopago": "^2.12.0",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.30",
     "openai": "^6.34.0",
+    "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
