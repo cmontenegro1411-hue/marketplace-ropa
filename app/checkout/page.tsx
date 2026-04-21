@@ -254,7 +254,7 @@ export default function CheckoutPage() {
               {preferenceId ? (
                 <div className="animate-in fade-in zoom-in duration-500">
                   <Wallet 
-                    preferenceId={preferenceId} 
+                    initialization={{ preferenceId: preferenceId }}
                     customization={{ 
                       visual: { 
                         buttonBackground: 'black',
