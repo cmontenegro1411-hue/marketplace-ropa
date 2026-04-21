@@ -31,7 +31,7 @@ export default function RefundRequestPage({ params }: { params: Promise<{ token:
     <main className="min-h-screen bg-[#F4F1EB] py-20 px-4 flex items-center justify-center font-sans">
       <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl p-8 border border-sand/50 overflow-hidden relative">
         <div className="text-center">
-          {status === 'ready' && (
+          {(status === 'ready' || status === 'loading' || status === 'error') && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle className="w-10 h-10 text-red-500" />
