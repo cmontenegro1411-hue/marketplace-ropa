@@ -37,7 +37,8 @@ Analizá la imagen y devolvé ÚNICAMENTE un JSON con esta estructura exacta:
   "descripcion": "Storytelling persuasivo: Comienza con un gancho sobre la calidad/diseño. Describe el material, por qué es una pieza esencial y termina resaltando su valor sostenible.",
   "marca": "marca detectada o null",
   "confianza_marca": 0.0,
-  "categoria": "Mujer | Hombre | Niños | Accesorios | Calzado",
+  "categoria": "Mujer | Hombre | Niños | Unisex",
+  "tipo_producto": "Ropa | Calzado | Accesorios",
   "tipo_prenda": "Nombre común",
   "color": "Color descriptivo",
   "material": "Material estimado (ej: Algodón pima, Cuero vegano)",
@@ -67,7 +68,8 @@ TASACIÓN MATEMÁTICA (REGLA FIJA):
 - 'con_señales_de_uso': 20% del Retail.
 
 REGLAS CRÍTICAS:
-- 'categoria' DEBE ser uno de: "Mujer", "Hombre", "Niños", "Accesorios", "Calzado".
+- 'categoria' DEBE ser uno de: "Mujer", "Hombre", "Niños", "Unisex".
+- 'tipo_producto' DEBE ser uno de: "Ropa", "Calzado", "Accesorios".
 - El tono debe ser elegante pero accesible.
 - No inventar marcas; si no es claro poner null.`;
 

@@ -20,6 +20,7 @@ const SellPage = () => {
     title: '',
     brand: '',
     category: '',
+    categoryType: '',
     condition: '',
     size: '',
     description: '',
@@ -65,6 +66,7 @@ const SellPage = () => {
       // 2. Submit Listing
       const result = await createListing({
         ...formData,
+        category: `${formData.category} | ${formData.categoryType}`,
         price: Number(formData.price),
         images: imageUrls
       });
@@ -165,14 +167,22 @@ const SellPage = () => {
                 <input required type="text" value={formData.size} onChange={(e) => setFormData({...formData, size: e.target.value})} placeholder="Ej: M, 38, L, Única" className="w-full bg-cream/30 border border-sand rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Categoría</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted">¿Para quién?</label>
                 <select required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full bg-cream/30 border border-sand rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none appearance-none">
                   <option value="">Seleccionar...</option>
                   <option value="Mujer">Mujer</option>
                   <option value="Hombre">Hombre</option>
                   <option value="Niños">Niños</option>
-                  <option value="Accesorios">Accesorios</option>
+                  <option value="Unisex">Unisex</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Tipo de Artículo</label>
+                <select required value={formData.categoryType} onChange={(e) => setFormData({...formData, categoryType: e.target.value})} className="w-full bg-cream/30 border border-sand rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none appearance-none">
+                  <option value="">Seleccionar...</option>
+                  <option value="Ropa">Ropa</option>
                   <option value="Calzado">Calzado</option>
+                  <option value="Accesorios">Accesorios</option>
                 </select>
               </div>
               <div className="space-y-2">

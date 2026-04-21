@@ -14,6 +14,7 @@ export default async function SearchPage({
 }) {
   const resolvedParams = await searchParams;
   const category = resolvedParams.cat as string;
+  const type = resolvedParams.type as string; // Nuevo: Tipo de producto (Ropa, Calzado, etc)
   const condition = resolvedParams.cond as string;
   const query = resolvedParams.q as string;
 
@@ -30,12 +31,19 @@ export default async function SearchPage({
   // 2. Construcción de Query Segura
   let dbQuery = supabase.from('products').select('*');
 
-  // Filtros dinámicos de Categoría
+  // Filtros dinámicos de Segmento (Mujer, Hombre, Niños)
   if (category) {
     if (hasCategorySingular) {
-      dbQuery = dbQuery.eq('category', category);
+      dbQuery = dbQuery.ilike('category', `%${category}%`);
     } else if (hasCategoriesPlural) {
       dbQuery = dbQuery.contains('categories', [category]);
+    }
+  }
+
+  // Filtro de Tipo de Producto (Ropa, Calzado, Accesorios)
+  if (type) {
+    if (hasCategorySingular) {
+      dbQuery = dbQuery.ilike('category', `%${type}%`);
     }
   }
 

@@ -76,7 +76,7 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-10 text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/60">
             <Link href="/search?cat=Mujer" className="hover:text-primary transition-colors">Mujer</Link>
             <Link href="/search?cat=Hombre" className="hover:text-primary transition-colors">Hombre</Link>
-            <Link href="/search?cat=Accesorios" className="hover:text-primary transition-colors">Accesorios</Link>
+            <Link href="/search?cat=Ni%C3%B1os" className="hover:text-primary transition-colors">Niños</Link>
           </div>
         )}
 

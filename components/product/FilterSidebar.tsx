@@ -8,6 +8,7 @@ export const FilterSidebar = () => {
   const searchParams = useSearchParams();
 
   const currentCategory = searchParams.get('cat') || '';
+  const currentType = searchParams.get('type') || '';
   const currentCondition = searchParams.get('cond') || '';
 
   const updateFilter = (key: string, value: string) => {
@@ -22,27 +23,49 @@ export const FilterSidebar = () => {
     router.push(`/search?${params.toString()}`);
   };
 
-  const categories = ['Mujer', 'Hombre', 'Niños', 'Accesorios', 'Calzado'];
+  const segments = ['Mujer', 'Hombre', 'Niños', 'Unisex'];
+  const types = ['Ropa', 'Calzado', 'Accesorios'];
   const conditions = ['Nuevo con etiqueta', 'Muy buen estado', 'Buen estado', 'Usado'];
 
   return (
     <aside className="space-y-10 lg:sticky lg:top-24 h-fit">
       <div>
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-6">Categorías</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-6">Público</h3>
         <div className="space-y-3">
           <button 
             onClick={() => updateFilter('cat', '')}
             className={`block text-sm transition-all ${currentCategory === '' ? 'text-secondary font-bold underline underline-offset-8' : 'text-muted hover:text-primary'}`}
           >
-            Todas las prendas
+            Todos
           </button>
-          {categories.map((cat) => (
+          {segments.map((seg) => (
             <button 
-              key={cat}
-              onClick={() => updateFilter('cat', cat)}
-              className={`block text-sm transition-all ${currentCategory === cat ? 'text-secondary font-bold underline underline-offset-8' : 'text-muted hover:text-primary'}`}
+              key={seg}
+              onClick={() => updateFilter('cat', seg)}
+              className={`block text-sm transition-all ${currentCategory === seg ? 'text-secondary font-bold underline underline-offset-8' : 'text-muted hover:text-primary'}`}
             >
-              {cat}
+              {seg}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-6">Producto</h3>
+        <div className="space-y-3">
+          <button 
+            onClick={() => updateFilter('type', '')}
+            className={`block text-sm transition-all ${currentType === '' ? 'text-secondary font-bold underline underline-offset-8' : 'text-muted hover:text-primary'}`}
+          >
+            Ver todo
+          </button>
+          {types.map((t) => (
+            <button 
+              key={t}
+              onClick={() => updateFilter('type', t)}
+              className={`block text-sm transition-all ${currentType === t ? 'text-secondary font-bold underline underline-offset-8' : 'text-muted hover:text-primary'}`}
+            >
+              {t}
             </button>
           ))}
         </div>
@@ -69,7 +92,7 @@ export const FilterSidebar = () => {
         </div>
       </div>
 
-      {(currentCategory || currentCondition) && (
+      {(currentCategory || currentType || currentCondition) && (
         <button 
           onClick={() => router.push('/search')}
           className="text-[10px] font-bold uppercase tracking-widest text-primary border-b border-primary pb-1 pt-4 opacity-60 hover:opacity-100 transition-opacity"
