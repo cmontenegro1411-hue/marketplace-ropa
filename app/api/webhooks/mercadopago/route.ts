@@ -33,6 +33,12 @@ export async function POST(req: NextRequest) {
             })
             .in('id', productIds);
 
+          // 3. OBTENER DETALLES EXTENDIDOS (Para Escrow y correos)
+          const { data: fullProducts } = await supabaseAdmin
+            .from('products')
+            .select('id, title, price, brand, seller_id, users!inner(email, name, whatsapp_number)')
+            .in('id', productIds);
+
           // 2. Registrar/Actualizar Orden
           const { data: order } = await supabaseAdmin
             .from('orders')
@@ -65,13 +71,6 @@ export async function POST(req: NextRequest) {
                 await supabaseAdmin.from('order_items').insert(itemsToInsert);
              }
           }
-
-          // 3. ENVIAR NOTIFICACIONES POR CORREO (BREVO)
-          // Obtener detalles extendidos de productos y sus vendedores
-          const { data: fullProducts } = await supabaseAdmin
-            .from('products')
-            .select('title, price, brand, seller_id, users!inner(email, name, whatsapp_number)')
-            .in('id', productIds);
 
           if (fullProducts && fullProducts.length > 0) {
             const buyerEmail = paymentData.payer?.email;
