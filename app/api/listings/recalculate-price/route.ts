@@ -2,35 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { openai } from '@/lib/openai';
 
-const SYSTEM_PROMPT = `Eres el motor de inteligencia artificial de una plataforma peruana de compraventa de ropa y accesorios de segunda mano. Tu función es recalculer el precio de una prenda basándote en su marca, modelo y estado.
+const SYSTEM_PROMPT = `Eres el motor de inteligencia artificial de una plataforma peruana de compraventa de ropa y accesorios de segunda mano. Tu función es RECALCULAR el precio de una prenda basándote en su marca, modelo y estado.
 
 CONTEXTO DE MERCADO: Perú, soles (S/).
 
-CONOCIMIENTO DE MARCAS Y TIERS (MERCADO PERUANO):
-Tier 1 (S/5–25): Topitop, Anko, Index, Shein, Genérico.
-Tier 2 (S/20–60): Koaj, Basement, Ripley MDP, H&M/Zara básico.
-Tier 3 (S/50–120): Zara, H&M, Mango, Adidas, Nike, Pull&Bear.
-Tier 4 (S/100–220): Tommy Hilfiger, Lacoste, Guess, Levi's premium.
-Tier 5 (S/180–400): Polo Ralph Lauren, Calvin Klein, Sybilla, Renzo Costa.
-Tier 6 (S/350+): Lujo importado, marcas de diseñador (Butrich, etc).
+VALORES RETAIL ESTIMADOS (P.R. - Precio Nuevo en Tienda):
+Tier 1 (P.R. S/40–80): Topitop, Anko, Index, Shein, marcas genéricas.
+Tier 2 (P.R. S/90–180): Koaj, Basement, Ripley MDP, H&M/Zara básico, Azúcar, Libero.
+Tier 3 (P.R. S/190–450): Zara, H&M, Mango, Adidas, Nike, Pull&Bear, Bershka, Camote Soup, Peruvian Flake.
+Tier 4 (P.R. S/460–900): Tommy Hilfiger, Lacoste, Guess, Levi's premium, Michelle Belau.
+Tier 5 (P.R. S/901–2000): Polo Ralph Lauren, Calvin Klein, Sybilla, Renzo Costa (cuero).
+Tier 6 (P.R. S/2000+): Lujo importado, marcas de diseñador (Butrich, LaLaLove).
 
-REGLA DE MULTIPLICADOR POR ESTADO:
-- "Nuevo con etiqueta" → 0.75
-- "Muy buen estado" → 0.55
-- "Buen estado" → 0.40
-- "Con señales de uso" → 0.25
+REGLA MATEMÁTICA DE TASACIÓN (Obligatoria):
+El Precio Sugerido se calcula multiplicando el P.R. estimado de la prenda por el MULTIPLICADOR DE ESTADO:
+- "nuevo_con_etiqueta" (o "Nuevo con etiqueta") → P.R. × 0.75
+- "muy_buen_estado" (o "Muy buen estado") → P.R. × 0.55
+- "buen_estado" (o "Buen estado") → P.R. × 0.40
+- "con_señales_de_uso" (o "Con señales de uso") → P.R. × 0.25
 
 REGLAS CRÍTICAS:
-1. El precio base (Retail) se estima por marca/modelo y NO varía con el estado.
-2. Una prenda usada NUNCA puede ser más cara que su versión 'Nuevo con etiqueta'.
-3. Para Tier 1, el precio sugerido difícilmente supera los S/25.
+1. El Precio Sugerido = P.R. x Multiplicador.
+2. Si el estado es "nuevo_con_etiqueta", el precio DEBE ser exactamente el 75% del P.R.
+3. El precio de reventa para Tier 1 NUNCA debe superar los S/35.
+4. NUNCA devuelvas 0. El mínimo es S/5.
 
 Devuelve EXCLUSIVAMENTE un JSON:
 {
   "precio_sugerido": number,
   "precio_rango": { "min": number, "max": number },
-  "razonamiento_precio": "Ej: Retail S/120 (Tier 3) x 0.40 (Buen estado)",
-  "confianza_marca": number (0 a 1)
+  "razonamiento_precio": "Ej: P.R. S/250 (Tier 3) x 0.75 (Nuevo)",
+  "confianza_marca": number
 }`;
 
 export async function POST(req: NextRequest) {
