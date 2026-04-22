@@ -82,21 +82,12 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
     const multiplier = PR_MULTIPLIERS[condition] || 0.40;
     let suggested = retail * multiplier;
 
-    // Regla Tier 1: Máximo S/35
-    // Si el retail es bajo (Tier 1 aprox < 100), aplicamos el techo
-    if (retail <= 100 && suggested > 35) {
-      suggested = 35;
-    }
+    // Asegurar un mínimo de S/ 5 para que nada sea S/ 0
+    if (suggested < 5) suggested = 5;
 
-    // Rangos dinámicos
-    let min, max;
-    if (suggested <= 35) {
-      min = 5;
-      max = 35;
-    } else {
-      min = Math.floor(suggested * 0.85);
-      max = Math.ceil(suggested * 1.15);
-    }
+    // Rangos dinámicos (+/- 15%) para mayor veracidad
+    const min = Math.floor(suggested * 0.85);
+    const max = Math.ceil(suggested * 1.15);
 
     return { suggested, range: { min, max } };
   };
@@ -111,6 +102,20 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
       precio_rango: range
     }));
   }, [form.precio_original_estimado, form.condicion]);
+
+  // Efecto adicional: Mantener el rango actualizado si el usuario edita el precio sugerido manualmente
+  useEffect(() => {
+    const min = Math.floor(form.precio_sugerido * 0.85);
+    const max = Math.ceil(form.precio_sugerido * 1.15);
+    
+    // Solo actualizamos si el rango actual es distinto para evitar bucles
+    if (form.precio_rango.min !== min || form.precio_rango.max !== max) {
+      setForm(prev => ({
+        ...prev,
+        precio_rango: { min, max }
+      }));
+    }
+  }, [form.precio_sugerido]);
 
   // Efecto 2: Smart Pricing Reactivo (Solo cuando cambia Marca/Modelo/Tipo para ajustar Retail)
   useEffect(() => {

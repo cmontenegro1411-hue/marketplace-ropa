@@ -52,9 +52,8 @@ El Precio Sugerido se calcula multiplicando el P.R. estimado de la prenda por el
 
 REGLAS CRÍTICAS:
 1. Una prenda usada NUNCA puede ser más cara que su versión 'nuevo_con_etiqueta'.
-2. El precio de reventa para Tier 1 NUNCA debe superar los S/35, sin importar el estado.
-3. NUNCA devuelvas un precio sugerido de 0. El mínimo es S/5.
-4. Si la marca no es visible, clasifícala como "Genérico" (Tier 1).
+2. NUNCA devuelvas un precio sugerido de 0. El mínimo es S/5.
+3. Si la marca no es visible, clasifícala como "Genérico" (Tier 1).
 
 FORMATO DE RESPUESTA JSON REQUERIDO:
 {
