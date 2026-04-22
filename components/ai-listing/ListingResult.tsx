@@ -18,6 +18,7 @@ export interface AIResult {
   condicion: string;
   precio_sugerido: number;
   precio_rango: { min: number; max: number };
+  precio_original_estimado: number; // Retail Price (P.R.)
   hashtags_instagram: string[];
   keywords_busqueda: string[];
   plataforma_ideal: string;
@@ -50,6 +51,14 @@ const PLATFORM_ICONS: Record<string, string> = {
   mercari:  '📦',
 };
 
+// Constantes de Tasación (Multiplicadores Determinísticos)
+const PR_MULTIPLIERS: Record<string, number> = {
+  nuevo_con_etiqueta: 0.75,
+  muy_buen_estado:    0.55,
+  buen_estado:        0.40,
+  con_señales_de_uso: 0.25,
+};
+
 export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: ListingResultProps) => {
   const router = useRouter();
   const [form, setForm] = useState<AIResult>({ ...result });
@@ -63,17 +72,62 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
     razonamiento_precio?: string;
   } | null>(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
-  const lastStateRef = useRef({ brand: form.marca, type: form.tipo_prenda, condition: form.condicion });
+  const lastStateRef = useRef({ brand: form.marca, type: form.tipo_prenda, model: form.modelo });
 
   const updateField = <K extends keyof AIResult>(key: K, value: AIResult[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Lógica de Smart Pricing Reactivo
+  // Función de cálculo local determinístico
+  const calculateResalePrice = (retail: number, condition: string) => {
+    const multiplier = PR_MULTIPLIERS[condition] || 0.40;
+    let suggested = retail * multiplier;
+
+    // Regla Tier 1: Máximo S/35
+    // Si el retail es bajo (Tier 1 aprox < 100), aplicamos el techo
+    if (retail <= 100 && suggested > 35) {
+      suggested = 35;
+    }
+
+    // Rangos dinámicos
+    let min, max;
+    if (suggested <= 35) {
+      min = 5;
+      max = 35;
+    } else {
+      min = Math.floor(suggested * 0.85);
+      max = Math.ceil(suggested * 1.15);
+    }
+
+    return { suggested, range: { min, max } };
+  };
+
+  // Efecto 1: Recalcular precio localmente cuando cambia retail o condición
   useEffect(() => {
-    // Si no hay tipo de prenda, no podemos tasar
+    const { suggested, range } = calculateResalePrice(form.precio_original_estimado, form.condicion);
+    
+    setForm(prev => ({
+      ...prev,
+      precio_sugerido: Math.round(suggested),
+      precio_rango: range
+    }));
+  }, [form.precio_original_estimado, form.condicion]);
+
+  // Efecto 2: Smart Pricing Reactivo (Solo cuando cambia Marca/Modelo/Tipo para ajustar Retail)
+  useEffect(() => {
     if (!form.tipo_prenda) return;
 
-    // Al cambiar cualquier valor clave, limpiamos sugerencias viejas de inmediato para evitar confusión
+    // Solo disparamos si cambió algo que afecte el valor retail base
+    if (
+      lastStateRef.current.brand === form.marca &&
+      lastStateRef.current.type === form.tipo_prenda &&
+      lastStateRef.current.model === form.modelo
+    ) return;
+
+    lastStateRef.current = { 
+      brand: form.marca, 
+      type: form.tipo_prenda, 
+      model: form.modelo 
+    };
     setSuggestedUpdate(null);
 
     const timer = setTimeout(async () => {
@@ -86,22 +140,24 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
             brand: form.marca || 'Genérico',
             modelo: form.modelo || '',
             tipo_prenda: form.tipo_prenda,
-            condicion: form.condicion,
-            categoria: form.categoria,
-            current_price: form.precio_sugerido
+            categoria: form.categoria
           })
         });
 
         const json = await response.json();
-        if (json.success) {
-          // Actualizar confianza de marca si viene de la IA
+        if (json.success && json.data.precio_retail_estimado) {
+          // Actualizar confianza de marca
           if (json.data.confianza_marca !== undefined) {
             updateField('confianza_marca', json.data.confianza_marca);
           }
 
-          // Si el precio devuelto es sustancialmente distinto al actual, mostramos sugerencia
-          if (Math.round(json.data.precio_sugerido) !== Math.round(form.precio_sugerido)) {
-            setSuggestedUpdate(json.data);
+          // Si el retail estimado es distinto, sugerimos actualizar el Retail base
+          if (Math.round(json.data.precio_retail_estimado) !== Math.round(form.precio_original_estimado)) {
+            setSuggestedUpdate({
+              precio_sugerido: json.data.precio_retail_estimado,
+              precio_rango: { min: 0, max: 0 }, // No se usa para sugerencia de retail
+              razonamiento_precio: json.data.razonamiento
+            });
           }
         }
       } catch (err) {
@@ -109,15 +165,14 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
       } finally {
         setIsRecalculating(false);
       }
-    }, 600); // Rápida respuesta
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [form.marca, form.modelo, form.tipo_prenda, form.condicion, form.categoria]);
+  }, [form.marca, form.modelo, form.tipo_prenda, form.categoria]);
 
   const applySuggestedPrice = () => {
     if (suggestedUpdate) {
-      updateField('precio_sugerido', suggestedUpdate.precio_sugerido);
-      updateField('precio_rango', suggestedUpdate.precio_rango);
+      updateField('precio_original_estimado', suggestedUpdate.precio_sugerido);
       setSuggestedUpdate(null);
     }
   };
@@ -273,30 +328,56 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
       </div>
 
       {/* Precio */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-sand space-y-4">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Precio sugerido</span>
-        <div className="flex items-end gap-6 flex-wrap">
-          <div className="space-y-1.5">
-            <label className="text-[11px] text-muted">Precio (S/)</label>
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-sand space-y-6">
+        <div className="flex flex-col sm:flex-row gap-6">
+          
+          {/* Precio Retail (P.R.) - EL NUEVO MOTOR */}
+          <div className="space-y-1.5 flex-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Precio Retail (P.R.)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-serif font-bold text-muted">S/</span>
+              <input
+                type="number"
+                value={form.precio_original_estimado}
+                onChange={(e) => updateField('precio_original_estimado', Number(e.target.value))}
+                className="w-full text-xl font-serif font-bold text-primary bg-primary/5 border border-primary/10 rounded-xl px-3 py-2.5 focus:border-primary outline-none transition-colors"
+              />
+            </div>
+            <p className="text-[9px] text-muted leading-tight">
+              Precio estimado de la prenda nueva en tienda. Úsalo para ajustar el precio de reventa.
+            </p>
+          </div>
+
+          <div className="hidden sm:block w-px bg-sand self-stretch my-2" />
+
+          {/* Precio de Reventa (Sugerido) */}
+          <div className="space-y-1.5 flex-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-secondary">Precio Sugerido</label>
             <div className="flex items-center gap-2">
               <span className="text-xl font-serif font-bold text-muted">S/</span>
               <input
                 type="number"
                 value={form.precio_sugerido}
                 onChange={(e) => updateField('precio_sugerido', Number(e.target.value))}
-                className="w-28 text-2xl font-serif font-bold text-secondary bg-cream/30 border border-sand rounded-xl px-3 py-2.5 focus:border-secondary outline-none"
+                className="w-full text-2xl font-serif font-bold text-secondary bg-secondary/5 border border-secondary/10 rounded-xl px-3 py-2.5 focus:border-secondary outline-none"
               />
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-muted uppercase">Rango: S/ {form.precio_rango.min} - S/ {form.precio_rango.max}</span>
+              <span className="text-[10px] font-bold text-secondary/70">{(PR_MULTIPLIERS[form.condicion] * 100).toFixed(0)}% del P.R.</span>
+            </div>
           </div>
-          <div className="text-xs text-muted space-y-0.5">
-            <p className="font-bold text-muted">Rango sugerido:</p>
-            <p>S/ {form.precio_rango.min} — S/ {form.precio_rango.max}</p>
-            {form.razonamiento_precio && (
-              <p className="text-[10px] italic mt-1 text-primary/60 max-w-[200px]">
+        </div>
+
+        <div className="pt-2 border-t border-sand flex items-center gap-6 flex-wrap">
+          {form.razonamiento_precio && (
+            <div className="text-xs text-muted flex-1">
+              <p className="font-bold text-muted text-[10px] uppercase tracking-wider mb-1">Lógica de tasación:</p>
+              <p className="italic text-primary/60">
                 {form.razonamiento_precio}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Sugerencia de la IA */}
           {suggestedUpdate && !isRecalculating && (
@@ -310,11 +391,11 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
               <div className="flex items-center gap-2">
                 <span className="text-lg">✨</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-                  {isLowConfidence ? 'Verificar Tasación' : 'Precio X Marca'}
+                  {isLowConfidence ? 'Verificar Tasación' : 'Actualizar Retail (P.R.)'}
                 </span>
               </div>
               <div className="text-sm font-bold text-primary">
-                Actualizar a S/ {Math.round(suggestedUpdate.precio_sugerido)}
+                Sugerido: S/ {Math.round(suggestedUpdate.precio_sugerido)}
               </div>
               {suggestedUpdate.razonamiento_precio && (
                 <div className="text-[9px] text-primary/70 mt-1 leading-tight max-w-[180px]">

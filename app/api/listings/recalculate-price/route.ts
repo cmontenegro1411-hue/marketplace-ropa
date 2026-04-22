@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { openai } from '@/lib/openai';
 
-const SYSTEM_PROMPT = `Eres el motor de inteligencia artificial de una plataforma peruana de compraventa de ropa y accesorios de segunda mano. Tu función es RECALCULAR el precio de una prenda basándote en su marca, modelo y estado.
+const SYSTEM_PROMPT = `Eres el motor de inteligencia artificial de una plataforma peruana de compraventa de ropa y accesorios de segunda mano. Tu función es ESTIMAR el precio original de tienda (Retail) de una prenda basándote en su marca, modelo y categoría.
 
 CONTEXTO DE MERCADO: Perú, soles (S/).
 
@@ -14,24 +14,14 @@ Tier 4 (P.R. S/460–900): Tommy Hilfiger, Lacoste, Guess, Levi's premium, Miche
 Tier 5 (P.R. S/901–2000): Polo Ralph Lauren, Calvin Klein, Sybilla, Renzo Costa (cuero).
 Tier 6 (P.R. S/2000+): Lujo importado, marcas de diseñador (Butrich, LaLaLove).
 
-REGLA MATEMÁTICA DE TASACIÓN (Obligatoria):
-El Precio Sugerido se calcula multiplicando el P.R. estimado de la prenda por el MULTIPLICADOR DE ESTADO:
-- "nuevo_con_etiqueta" (o "Nuevo con etiqueta") → P.R. × 0.75
-- "muy_buen_estado" (o "Muy buen estado") → P.R. × 0.55
-- "buen_estado" (o "Buen estado") → P.R. × 0.40
-- "con_señales_de_uso" (o "Con señales de uso") → P.R. × 0.25
-
-REGLAS CRÍTICAS:
-1. El Precio Sugerido = P.R. x Multiplicador.
-2. Si el estado es "nuevo_con_etiqueta", el precio DEBE ser exactamente el 75% del P.R.
-3. El precio de reventa para Tier 1 NUNCA debe superar los S/35.
-4. NUNCA devuelvas 0. El mínimo es S/5.
+REGLA CRÍTICA:
+- Solo estima el precio RETAIL (P.R.). No apliques descuentos por estado.
+- Si es una marca de Tier 1, el P.R. no suele superar los S/80.
 
 Devuelve EXCLUSIVAMENTE un JSON:
 {
-  "precio_sugerido": number,
-  "precio_rango": { "min": number, "max": number },
-  "razonamiento_precio": "Ej: P.R. S/250 (Tier 3) x 0.75 (Nuevo)",
+  "precio_retail_estimado": number,
+  "razonamiento": "string",
   "confianza_marca": number
 }`;
 
@@ -40,7 +30,7 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { brand, modelo, tipo_prenda, condicion, current_price, categoria } = await req.json();
+    const { brand, modelo, tipo_prenda, categoria } = await req.json();
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -48,7 +38,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: SYSTEM_PROMPT },
         { 
           role: 'user', 
-          content: `Marca: ${brand}. Modelo: ${modelo}. Prenda: ${tipo_prenda}. Estado: ${condicion}. Calcula el precio matemático exacto.` 
+          content: `Marca: ${brand}. Modelo: ${modelo}. Prenda: ${tipo_prenda}. Categoría: ${categoria}. Estima el precio Retail (nuevo en tienda) en soles peruanos.` 
         }
       ],
       temperature: 0,

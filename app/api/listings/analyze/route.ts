@@ -239,12 +239,13 @@ export async function POST(req: NextRequest) {
         min: raw.precio?.rango_minimo || 0, 
         max: raw.precio?.rango_maximo || 0 
       },
+      precio_original_estimado: raw.precio?.precio_original_estimado || 0,
       razonamiento_precio: raw.precio?.logica || "",
       hashtags_instagram: raw.listado?.hashtags || [],
       keywords_busqueda: raw.listado?.keywords_busqueda || [],
       advertencias: raw.estado_analisis?.advertencias || [],
       // Otros campos de interés
-      modelo: raw.clasificacion?.subcategoria || "",
+      modelo: raw.clasificacion?.subcategoria || raw.clasificacion?.tipo_prenda || "",
       plataforma_ideal: "vinted",
       vendedor_recomendacion: raw.metadatos?.sugerencias_para_mejorar_venta?.[0] || ""
     };
