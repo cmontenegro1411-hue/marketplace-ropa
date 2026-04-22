@@ -79,7 +79,7 @@
 
 ## 5. CHANGELOG RECENTE
 
-- **[22-04-2026] - v1.5.1:** Corrección del Motor de Tasación. Se eliminó el techo agresivo de S/35 que rompía la lógica de porcentajes en prendas de Tier 1/2. Rangos de precio ahora son proporcionales (+/- 15%) para mayor veracidad.
+- **[22-04-2026] - v1.5.1:** Corrección del Motor de Tasación y UI. Se eliminó el techo de S/35, se añadieron rangos proporcionales y se incorporó la opción **Unisex** en el campo de Categoría.
 - **[21-04-2026] - v1.5.0:** Implementación del **Motor de Tasación Híbrido Determinístico**. El cálculo matemático (75%, 55%, 40%, 25%) se movió al Frontend para eliminar volatilidad. Se añadió el campo **Precio Retail (P.R.)** editable por el usuario. Desplegado en Vercel.
 - **[20-04-2026] - v1.4.0:** Consolidación del equipo de agentes a modelo Lean (5 roles) y reestructuración del Cerebro.
 - **[18-04-2026]:** Implementación de bloqueo absoluto de créditos IA y corrección de caché en `CreditsCounter`.
