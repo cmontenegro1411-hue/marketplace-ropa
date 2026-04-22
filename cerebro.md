@@ -49,16 +49,16 @@
 - **Estado Actual:**
   - Implementando la máquina de estados en `product-actions.ts`.
   - Refactorizando `signup-callback` para asegurar la creación de usuarios post-pago.
-  - Manteniendo el enforcement estricto de créditos IA en `analyze/route.ts`.
+  - Simplificación de endpoints de IA (`analyze` y `recalculate-price`) para enfocarse solo en estimación de **Precio Retail (P.R.)**, eliminando lógica matemática del servidor.
 - **Regla Maestra:** El servidor debe impedir estados inválidos; si el sistema falla sin logs, la operación es deficiente.
 
 ### 3.4 Tech Lead Frontend & UX/UI (Interfaz)
 
 - **Responsabilidad:** Vistas, componentes reutilizables, manejo de estado global (UI) y performance.
 - **Estado Actual:**
-  - Optimización final del **Magic Listing** (Venta IA) con soporte para campo **Modelo**.
-  - Implementación del **Motor de Tasación Algorítmica** (70%, 50%, 35%, 20%) para asegurar degradación coherente por estado.
-  - Añadido sistema de **Safeguards de Confianza** (Alertas ámbar si la IA duda de la marca detectada).
+  - Despliegue de **Motor de Tasación Híbrido**: La IA estima el Precio Retail (P.R.) y el Frontend aplica multiplicadores determinísticos (75%, 55%, 40%, 25%).
+  - Implementación de **Campo Retail Editable**: El usuario puede ajustar manualmente el P.R. para corregir la base de tasación.
+  - Aplicación de **Regla Tier 1 (Techo S/35)** para asegurar veracidad en artículos de bajo costo.
   - Asegurando despliegue dinámico (`force-dynamic`) para evitar desincronización de créditos en la UI.
 - **Regla Maestra:** Si el usuario duda o la app parece congelada sin feedback, la interfaz ha fallado.
 
@@ -79,7 +79,7 @@
 
 ## 5. CHANGELOG RECENTE
 
-- **[21-04-2026] - v1.5.0:** Implementación del **Motor de Tasación Algorítmica Estricta**. Integración del campo 'Modelo' en el listado y mejora de la cultura de marcas locales (Butrich/Diseñadores) en la IA.
+- **[21-04-2026] - v1.5.0:** Implementación del **Motor de Tasación Híbrido Determinístico**. El cálculo matemático (75%, 55%, 40%, 25%) se movió al Frontend para eliminar volatilidad. Se añadió el campo **Precio Retail (P.R.)** editable por el usuario. Desplegado en Vercel.
 - **[20-04-2026] - v1.4.0:** Consolidación del equipo de agentes a modelo Lean (5 roles) y reestructuración del Cerebro.
 - **[18-04-2026]:** Implementación de bloqueo absoluto de créditos IA y corrección de caché en `CreditsCounter`.
 - **[17-04-2026]:** Pivot de modelo de negocio: Libertad total de vendedores + monetización vía eficiencia (IA).
