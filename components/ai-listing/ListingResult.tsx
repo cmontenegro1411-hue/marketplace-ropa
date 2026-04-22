@@ -28,7 +28,7 @@ export interface AIResult {
   vendedor_recomendacion?: string;
 }
 
-const CATEGORIES = ['Mujer', 'Hombre', 'Niños', 'Accesorios', 'Calzado'];
+const CATEGORIES = ['Mujer', 'Hombre', 'Niños', 'Unisex', 'Accesorios', 'Calzado'];
 
 interface ListingResultProps {
   result: AIResult;
