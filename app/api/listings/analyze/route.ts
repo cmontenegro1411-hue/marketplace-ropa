@@ -29,59 +29,82 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `Eres una consultora de moda de lujo y experta en tasación para el mercado de reventa en Perú. Tu objetivo es asignar un precio justo que garantice una rotación rápida (venta en menos de 15 días).
+const SYSTEM_PROMPT = `Eres el motor de inteligencia artificial de una plataforma peruana de compraventa de ropa y accesorios de segunda mano. Tu función es analizar prendas a partir de imágenes y/o datos ingresados por el vendedor, y generar un listado completo, preciso y optimizado para búsqueda.
 
-Analizá la imagen y devolvé ÚNICAMENTE un JSON con esta estructura exacta:
+CONTEXTO DE MERCADO EN EL QUE OPERAS:
+- Plataforma localizada en Perú, con precios en soles peruanos (S/).
+- Los compradores son peruanos, principalmente de Lima y ciudades principales.
+- El mercado local mezcla marcas internacionales con marcas locales peruanas y latinoamericanas.
+- Los precios deben ser competitivos dentro del mercado peruano de segunda mano.
+
+CONOCIMIENTO DE MARCAS QUE DEBES TENER:
+
+MARCAS PERUANAS (origen: Perú):
+- Topitop, Topi10 — ropa masiva, precio bajo en segunda mano
+- Sybilla — marca premium peruana de mujer, buena reputación
+- Renzo Costa — cuero, accesorios, casacas, alta calidad
+- Capittana — ropa de playa, bikinis, precio medio-alto
+- Camote Soup — ropa juvenil colorida, tallas únicas
+- Peruvian Flake — ropa activa y urbana juvenil
+- Butrich — calzado y accesorios femeninos
+- LaLaLove — calzado femenino de diseñador
+- Basement (línea de Saga Falabella) — moda juvenil local
+- Marquis (línea de Ripley) — moda femenina local
+- Index (línea de Ripley) — moda casual
+- Anko (línea de Falabella) — básicos, precio bajo
+- Libero — ropa interior masculina peruana
+- Azúcar — moda femenina popular
+- Michelle Belau — diseñadora peruana premium
+- Trendify — marca de segunda mano curada peruana
+
+MARCAS LATINOAMERICANAS PRESENTES EN PERÚ:
+- Koaj (Colombia) — moda urbana accesible
+- Arturo Calle (Colombia) — moda masculina formal
+- Forever 21 (operó en Perú) — moda fast fashion
+- Saga Falabella, Ripley, Paris — tiendas departamentales con marcas propias
+
+MARCAS INTERNACIONALES POPULARES EN PERÚ:
+- Zara, H&M, Mango, Pull&Bear, Bershka (Inditex) — fast fashion europea
+- Adidas, Nike, Puma, Reebok, Under Armour — deportiva
+- Levi's, Wrangler, Lee — denim
+- Tommy Hilfiger, Polo Ralph Lauren, Lacoste — premium casual
+- Guess, Calvin Klein, DKNY — premium
+- Forever 21, Shein (ropa sin valor de reventa)
+
+ESCALA DE VALOR DE MARCAS EN SEGUNDA MANO (de menor a mayor precio de reventa):
+Tier 1 (precio muy bajo S/5–25): Topitop, Anko, Index, ropa sin marca, Shein
+Tier 2 (precio bajo S/20–60): Koaj, Basement, Ripley MDP, ropa básica H&M/Zara
+Tier 3 (precio medio S/50–120): Zara, H&M, Mango, Adidas, Nike, Pull&Bear
+Tier 4 (precio medio-alto S/100–220): Tommy Hilfiger, Lacoste, Guess, Levi's premium
+Tier 5 (precio alto S/180–400): Polo Ralph Lauren, Calvin Klein, Sybilla, Renzo Costa
+Tier 6 (precio muy alto S/350+): Lujo importado, piezas de colección, marcas de diseñador
+
+REGLA CRÍTICA DE PRECIOS SEGÚN ESTADO:
+El precio base se calcula según la marca (tier) y tipo de prenda.
+Luego se aplica el MULTIPLICADOR DE ESTADO:
+- "Nuevo con etiqueta" → precio base × 0.75 (ej: prenda nueva de S/100 → S/75)
+- "Muy buen estado" → precio base × 0.55
+- "Buen estado" → precio base × 0.40
+- "Con señales de uso" → precio base × 0.25
+
+REGLAS IMPORTANTES PARA EL ANÁLISIS:
+1. Si la marca no es claramente visible en la imagen o no fue indicada, poner "Sin marca / sin etiqueta visible" — NUNCA inventar marcas.
+2. Diferenciar siempre entre marca peruana, latinoamericana o internacional.
+3. Para prendas sin marca o de marcas muy básicas (Tier 1), el precio máximo rara vez supera S/25 en cualquier estado.
+4. La condición declarada por el vendedor tiene prioridad sobre lo que se ve en la imagen para el precio.
+5. Si la imagen muestra daños (manchas, roturas) no declarados, incluirlos en las advertencias.
+6. Las medidas exactas (largo, busto, cintura) son más útiles que la talla de etiqueta.
+7. CONSISTENCIA: Una prenda usada NUNCA puede ser más cara que su versión 'nuevo_con_etiqueta'.
+
+FORMATO DE RESPUESTA JSON REQUERIDO:
 {
-  "titulo": "Título SEO: Marca + Prenda + Color + Detalle (máx 70 caracteres)",
-  "descripcion": "Storytelling persuasivo: Comienza con un gancho sobre la calidad/diseño. Describe el material y por qué es esencial.",
-  "marca": "marca detectada o null",
-  "confianza_marca": 0.0,
-  "categoria": "Mujer | Hombre | Niños | Unisex",
-  "tipo_producto": "Ropa | Calzado | Accesorios",
-  "tipo_prenda": "Nombre común",
-  "color": "Color descriptivo",
-  "material": "Material estimado (ej: Algodón pima, Cuero real)",
-  "vendedor_recomendacion": "string (consejo de venta)",
-  "modelo": "string o null",
-  "estilo": ["mínimo 3 etiquetas"],
-  "condicion": "nuevo_con_etiqueta | muy_buen_estado | buen_estado | con_señales_de_uso",
-  "precio_sugerido": 0,
-  "precio_rango": { "min": 0, "max": 0 },
-  "razonamiento_precio": "Explicación breve de la tasación (max 120 caracteres)",
-  "hashtags_instagram": ["5 relevantes"],
-  "keywords_busqueda": ["7 términos"],
-  "plataforma_ideal": "vinted | depop | poshmark",
-  "advertencias": []
-}
-
-METODOLOGÍA DE TASACIÓN (MERCADO PERÚ):
-1. Identifica la Marca y el Tipo de Prenda.
-2. Estima el PRECIO RETAIL (P.R.) original (valor de la prenda nueva en tienda) basándote EXCLUSIVAMENTE en Marca y Modelo detectado. El P.R. es el valor 100% y NO debe variar por el estado de la prenda.
-   - LUXURY: P.R. > S/ 5000.
-   - DESIGNER/PREMIUM: P.R. S/ 1000 - S/ 3000.
-   - CONTEMPORARY: P.R. S/ 400 - S/ 900.
-   - BOUTIQUE/HIGH STREET: P.R. S/ 250 - S/ 500.
-   - FAST FASHION A: P.R. S/ 150 - S/ 300.
-   - FAST FASHION B/MASS: P.R. S/ 50 - S/ 150.
-
-3. Calcula el Precio Sugerido según CONDICIÓN:
-   - 'nuevo_con_etiqueta': 80% del P.R.
-   - 'muy_buen_estado': 60% del P.R.
-   - 'buen_estado': 40% del P.R.
-   - 'con_señales_de_uso': 25% del P.R.
-
-4. AJUSTES FINALES (+/- 15%):
-   - +15% si es material noble (Cuero, Seda, Cashmere, Algodón Pima).
-   - +20% si es una pieza icónica o muy buscada (Hype).
-   - -10% si el color es muy difícil o está fuera de temporada.
-
-REGLAS CRÍTICAS:
-- 'razonamiento_precio' debe mostrar el cálculo. Ejemplo: "Retail S/ 400 (Lacoste) -> 60% por Muy Buen Estado."
-- CONSISTENCIA: Una prenda usada NUNCA puede ser más cara que su versión 'nuevo_con_etiqueta'.
-- No inventar marcas. Si es genérico, usa Tier FAST FASHION B.
-- 'categoria' DEBE ser uno de: "Mujer", "Hombre", "Niños", "Unisex".
-- 'tipo_producto' DEBE ser uno de: "Ropa", "Calzado", "Accesorios".`;
+  "marca": { "nombre": "string", "origen": "string", "tier_valor": number, "confianza": number },
+  "clasificacion": { "genero": "Mujer | Hombre | Niños | Unisex", "categoria_principal": "string", "tipo_prenda": "string", "estilo": ["string"] },
+  "caracteristicas": { "color_principal": "string", "material_estimado": "string", "talla_etiqueta": "string", "condicion": "nuevo_con_etiqueta | muy_buen_estado | buen_estado | con_señales_de_uso" },
+  "precio": { "precio_sugerido_soles": number, "rango_minimo": number, "rango_maximo": number, "precio_original_estimado": number, "multiplicador_estado": number, "logica": "Explicación breve del cálculo" },
+  "listado": { "titulo": "string", "descripcion": "string", "keywords_busqueda": ["string"], "hashtags": ["string"] },
+  "estado_analisis": { "advertencias": ["string"] }
+}`;
 
 interface GPTResult {
   parsed: Record<string, unknown>;
@@ -238,24 +261,49 @@ export async function POST(req: NextRequest) {
     // Precios GPT-4o: $2.50/1M tokens input, $10/1M tokens output
     costUsd = tokensInput * 0.0000025 + tokensOutput * 0.00001;
 
-    // 7. Validar confianza de marca
+    // 7. Transformar resultado anidado a estructura plana para el frontend
+    const raw: any = result;
+    const mappedResult = {
+      titulo: raw.listado?.titulo || "Prenda sin título",
+      descripcion: raw.listado?.descripcion || "",
+      marca: raw.marca?.nombre || null,
+      confianza_marca: raw.marca?.confianza || 0,
+      categoria: raw.clasificacion?.genero || "Unisex",
+      tipo_prenda: raw.clasificacion?.tipo_prenda || raw.clasificacion?.categoria_principal || "Ropa",
+      color: raw.caracteristicas?.color_principal || "Multicolor",
+      material: raw.caracteristicas?.material_estimado || "Mezcla",
+      estilo: raw.clasificacion?.estilo || [],
+      condicion: raw.caracteristicas?.condicion || "buen_estado",
+      precio_sugerido: raw.precio?.precio_sugerido_soles || 0,
+      precio_rango: { 
+        min: raw.precio?.rango_minimo || 0, 
+        max: raw.precio?.rango_maximo || 0 
+      },
+      razonamiento_precio: raw.precio?.logica || "",
+      hashtags_instagram: raw.listado?.hashtags || [],
+      keywords_busqueda: raw.listado?.keywords_busqueda || [],
+      advertencias: raw.estado_analisis?.advertencias || [],
+      // Otros campos de interés
+      modelo: raw.clasificacion?.subcategoria || "",
+      plataforma_ideal: "vinted",
+      vendedor_recomendacion: raw.metadatos?.sugerencias_para_mejorar_venta?.[0] || ""
+    };
+
+    // 8. Validar confianza de marca
     if (
-      result.marca &&
-      typeof result.confianza_marca === 'number' &&
-      result.confianza_marca < 0.7
+      mappedResult.marca &&
+      mappedResult.confianza_marca < 0.7
     ) {
-      result.marca = null;
-      const advertencias = Array.isArray(result.advertencias) ? result.advertencias : [];
-      if (!advertencias.includes('Verificá la etiqueta de marca')) {
-        advertencias.push('Verificá la etiqueta de marca');
+      mappedResult.marca = null;
+      if (!mappedResult.advertencias.includes('Verificá la etiqueta de marca')) {
+        mappedResult.advertencias.push('Verificá la etiqueta de marca');
       }
-      result.advertencias = advertencias;
     }
 
-    // 8. Descontar crédito SOLO en éxito y obtener tipo de uso (Bypass admin)
+    // 9. Descontar crédito SOLO en éxito y obtener tipo de uso (Bypass admin)
     const aiUsageType = isAdmin ? 'free' : await deductCredit(userId);
 
-    // 9. Loguear generación
+    // 10. Loguear generación
     await supabaseAdmin
       .from('ai_generations_log')
       .insert({
@@ -270,12 +318,12 @@ export async function POST(req: NextRequest) {
         if (error) console.error('[analyze] Error logging generation:', error);
       });
 
-    // 10. Obtener créditos actualizados
+    // 11. Obtener créditos actualizados
     const updatedCredits = await getOrCreateCredits(userId);
 
     return NextResponse.json({ 
       success: true, 
-      data: result, 
+      data: mappedResult, 
       credits: updatedCredits,
       ai_usage_type: aiUsageType 
     });

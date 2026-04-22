@@ -11,7 +11,7 @@ export interface AIResult {
   marca: string | null;
   confianza_marca: number;
   categoria: string;
-  tipo_prenda: string; // Renombrado de subcategoria
+  tipo_prenda: string;
   color: string;
   material: string;
   estilo: string[];
@@ -24,6 +24,7 @@ export interface AIResult {
   advertencias: string[];
   modelo?: string;
   razonamiento_precio?: string;
+  vendedor_recomendacion?: string;
 }
 
 const CATEGORIES = ['Mujer', 'Hombre', 'Niños', 'Accesorios', 'Calzado'];
