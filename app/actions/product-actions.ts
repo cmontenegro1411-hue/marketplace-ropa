@@ -305,17 +305,34 @@ export async function completePurchase(productIds: string[], formData: any) {
     if (orderErr) {
        console.error('[Orders DB] Error al guardar orden en Supabase:', orderErr.message);
     } else if (orderRecord) {
-       // 🟢 REGISTRAR ITEMS INDIVIDUALES PARA EL FLUJO DE ESCROW
-       const itemsToInsert = products!.map(p => ({
-         order_id: orderRecord.id,
-         product_id: p.id,
-         seller_id: p.seller_id,
-         price: p.price,
-         payout_amount: p.price * 0.85, // 15% comisión total
-         status: 'pending'
-       }));
-       
-       await supabase.from('order_items').insert(itemsToInsert);
+       // 🟢 REGISTRAR ITEMS INDIVIDUALES Y CAPTURAR FONDOS EN ESCROW
+       for (const p of products!) {
+         const payoutAmount = p.price * 0.90; // 10% comisión plataforma (sin fee de MP en bypass)
+         
+         const { data: itemRecord, error: itemErr } = await supabaseAdmin
+           .from('order_items')
+           .insert({
+             order_id: orderRecord.id,
+             product_id: p.id,
+             seller_id: p.seller_id,
+             price: p.price,
+             payout_amount: payoutAmount,
+             status: 'pending'
+           })
+           .select('id')
+           .single();
+
+         if (!itemErr && itemRecord) {
+           // Invocar RPC de captura para auditoría y balance_pending
+           await supabaseAdmin.rpc('capture_escrow_funds', {
+             target_seller_id: p.seller_id,
+             payout_amount: payoutAmount,
+             ref_order_id: orderRecord.id,
+             ref_order_item_id: itemRecord.id,
+             tx_description: `Venta (Bypass): ${p.brand} ${p.title}`
+           });
+         }
+       }
     }
 
     // 🟢 NOTIFICAR AL COMPRADOR POR CORREO
@@ -541,32 +558,37 @@ export async function confirmConformity(productId: string) {
       return { success: false, error: "No tienes permiso para confirmar esta prenda." };
     }
 
-    // 2. Calcular Liquidación
-    const platformFee = product.price * 0.05;
-    const iaCost = product.ai_on_demand_charge ? 2 : 0;
-    const netPayout = product.price - platformFee - iaCost;
+    // 2. Obtener el order_item_id relacionado
+    const { data: orderItem } = await supabaseAdmin
+      .from('order_items')
+      .select('id')
+      .eq('product_id', productId)
+      .eq('status', 'pending')
+      .single();
 
-    // 3. Actualizar Producto
+    if (!orderItem) {
+      return { success: false, error: "No se encontró un ítem pendiente para esta prenda." };
+    }
+
+    // 3. Actualizar Producto (Estado visual)
     const { error } = await supabaseAdmin
       .from('products')
       .update({ 
         buyer_conformity: true,
-        net_payout: netPayout 
+        status: 'sold' // Marcar como vendido al confirmar recepción
       })
       .eq('id', productId);
 
     if (error) throw new Error(error.message);
 
-    // 4. Actualizar Audit Log en order_items
-    await supabaseAdmin
-      .from('order_items')
-      .update({ 
-        platform_fee: platformFee,
-        ia_cost: iaCost,
-        payout_amount: netPayout,
-        status: 'ready_for_payout'
-      })
-      .eq('product_id', productId);
+    // 4. Liberar fondos usando la lógica centralizada (lib/orders.ts)
+    const { processEscrowRelease } = await import('@/lib/orders');
+    const releaseResult = await processEscrowRelease(orderItem.id);
+
+    if (!releaseResult.success) {
+      console.error("[Escrow] Error al liberar fondos:", releaseResult.error);
+      // No fallamos el proceso de conformidad del usuario, pero logueamos el error para auditoría
+    }
 
     revalidatePath('/profile');
     return { success: true };
@@ -643,12 +665,16 @@ export async function confirmSale(productId: string) {
       };
     }
 
-    // 3. Calcular liquidación si no se hizo en confirmConformity
-    let netPayout = product.net_payout;
-    if (!netPayout) {
-      const platformFee = product.price * 0.05;
-      const iaCost = product.ai_on_demand_charge ? 2 : 0;
-      netPayout = product.price - platformFee - iaCost;
+    // 3. Obtener el order_item_id relacionado
+    const { data: orderItem } = await supabaseAdmin
+      .from('order_items')
+      .select('id')
+      .eq('product_id', productId)
+      .eq('status', 'pending')
+      .single();
+
+    if (!orderItem) {
+      return { success: false, error: "No se encontró un ítem pendiente para esta prenda." };
     }
 
     // 4. Marcar como vendido definitivamente
@@ -656,21 +682,19 @@ export async function confirmSale(productId: string) {
       .from('products')
       .update({ 
         status: 'sold',
-        buyer_conformity: isAutoConfirmed ? true : product.buyer_conformity, // Si fue por tiempo, marcamos conformidad
-        net_payout: netPayout
+        buyer_conformity: true
       })
       .eq('id', productId);
 
     if (updateErr) throw updateErr;
 
-    // 5. Actualizar order_items a 'completed' (Listo para depósito bancario real)
-    await supabaseAdmin
-      .from('order_items')
-      .update({ 
-        status: 'completed',
-        payout_amount: netPayout
-      })
-      .eq('product_id', productId);
+    // 5. Liberar fondos usando la lógica centralizada
+    const { processEscrowRelease } = await import('@/lib/orders');
+    const releaseResult = await processEscrowRelease(orderItem.id);
+
+    if (!releaseResult.success) {
+      throw new Error(`Fallo en liberación de fondos: ${releaseResult.error}`);
+    }
 
     revalidatePath('/profile');
     revalidatePath(`/product/${productId}`);

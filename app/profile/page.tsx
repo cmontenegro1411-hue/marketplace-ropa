@@ -7,6 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
 import { MPConnectButton } from "@/components/profile/MPConnectButton";
 import { BuyerConformityButton } from "@/components/profile/BuyerConformityButton";
+import { WalletHistory } from "@/components/profile/WalletHistory";
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -29,14 +30,16 @@ export default async function ProfilePage() {
     .eq('seller_id', session.user.id)
     .order('created_at', { ascending: false });
 
-  // Obtener estado de Mercado Pago Connect (via Admin Client para mayor seguridad)
+  // Obtener estado de Mercado Pago Connect y BALANCES
   const { data: userData } = await supabaseAdmin
     .from('users')
-    .select('mp_access_token')
+    .select('mp_access_token, balance_pending, balance_available')
     .eq('id', session.user.id)
     .single();
 
   const isMPConnected = !!userData?.mp_access_token;
+  const balancePending = userData?.balance_pending || 0;
+  const balanceAvailable = userData?.balance_available || 0;
 
   // Obtener mis compras (donde soy el comprador)
   const { data: myPurchases } = await supabase
@@ -44,6 +47,14 @@ export default async function ProfilePage() {
     .select('*')
     .eq('buyer_email', session.user.email)
     .order('created_at', { ascending: false });
+
+  // Obtener historial de billetera
+  const { data: walletTransactions } = await supabase
+    .from('wallet_transactions')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
 
   if (productsError) console.error("Error fetching user products:", productsError);
 
@@ -63,7 +74,7 @@ export default async function ProfilePage() {
   const totalActiveValue = activeProducts.reduce((sum, p) => sum + (p.price || 0), 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(amount);
   };
 
   return (
@@ -76,7 +87,7 @@ export default async function ProfilePage() {
           <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center text-4xl font-serif font-bold text-primary shadow-inner border border-sand">
             {userName.charAt(0)}
           </div>
-          <div className="text-center md:text-left space-y-2">
+          <div className="text-center md:text-left space-y-2 flex-1">
             <h1 className="text-4xl font-serif font-bold text-primary">{userName}</h1>
             <p className="text-muted font-medium">
               {(session.user as any).role === 'admin' ? 'Panel de Administrador' : 'Panel del Vendedor'} • 
@@ -97,10 +108,18 @@ export default async function ProfilePage() {
               </Suspense>
             </div>
             
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-4 border-t border-sand/50 mt-4">
+            <div className="flex flex-wrap justify-center md:justify-start gap-8 pt-6 border-t border-sand/50 mt-6">
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-muted">Créditos IA Disponibles</span>
-                <span className="font-bold text-sm text-primary">{isAdmin ? '∞' : creditInfo.credits_remaining}</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted">Billetera Disponible</span>
+                <span className="font-bold text-xl text-accent">{formatCurrency(balanceAvailable)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted">En Tránsito (Escrow)</span>
+                <span className="font-bold text-xl text-secondary">{formatCurrency(balancePending)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted">Créditos IA</span>
+                <span className="font-bold text-xl text-primary">{isAdmin ? '∞' : creditInfo.credits_remaining}</span>
               </div>
             </div>
           </div>
@@ -127,6 +146,24 @@ export default async function ProfilePage() {
 
         {/* Listings Section (Client side Tabs) */}
         <ProfileInventory products={myProducts || []} />
+
+        {/* Wallet History Section */}
+        <div className="mt-16">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-primary">Historial de Billetera</h2>
+              <p className="text-xs text-muted font-medium">Seguimiento de tus ingresos y liberaciones</p>
+            </div>
+          </div>
+          
+          <WalletHistory transactions={walletTransactions || []} />
+        </div>
       </Container>
     </main>
   );

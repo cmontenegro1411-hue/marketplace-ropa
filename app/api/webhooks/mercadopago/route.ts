@@ -54,21 +54,54 @@ export async function POST(req: NextRequest) {
             .single();
 
           if (order) {
+             // --- CÁLCULO DE COMISIONES (10% Plataforma + Fees MP) ---
+             const totalPaid = paymentData.transaction_amount || 0;
+             const totalMpFees = paymentData.fee_details?.reduce((acc: number, fee: any) => {
+               // Sumamos los fees que cobra MP (no incluimos application_fee si lo hubiera porque ese es nuestro)
+               if (fee.type === 'mercadopago_fee') return acc + (fee.amount || 0);
+               return acc;
+             }, 0) || 0;
+
              // 🟢 REGISTRAR ITEMS EN ESTADO PENDIENTE (FIDEICOMISO)
-             const itemsToInsert = fullProducts?.map(p => ({
-               order_id: order.id,
-               product_id: p.id,
-               seller_id: p.seller_id,
-               price: p.price,
-               payout_amount: p.price * 0.85, // 15% comisión plataforma
-               status: 'pending'
-             }));
+             const itemsToInsert = fullProducts?.map(p => {
+               const itemProportion = p.price / totalPaid;
+               const itemMpFee = totalMpFees * itemProportion;
+               const itemPlatformComm = p.price * 0.10;
+               const itemPayout = p.price - itemPlatformComm - itemMpFee;
+
+               return {
+                 order_id: order.id,
+                 product_id: p.id,
+                 seller_id: p.seller_id,
+                 price: p.price,
+                 payout_amount: Number(itemPayout.toFixed(2)),
+                 status: 'pending'
+               };
+             });
 
              if (itemsToInsert && itemsToInsert.length > 0) {
                 // Primero eliminamos los items vacíos creados inicialmente si los hubiera
                 await supabaseAdmin.from('order_items').delete().eq('order_id', order.id);
                 // Insertamos los completos para el flujo de Escrow
-                await supabaseAdmin.from('order_items').insert(itemsToInsert);
+                const { data: savedItems, error: insertError } = await supabaseAdmin
+                  .from('order_items')
+                  .insert(itemsToInsert)
+                  .select();
+
+                if (!insertError && savedItems) {
+                  // 💰 CAPTURAR FONDOS EN BILLETERA (Escrow)
+                  // Invocamos el RPC para cada item para tener auditoría detallada
+                  for (const item of savedItems) {
+                    const productTitle = fullProducts?.find(p => p.id === item.product_id)?.title || 'Producto';
+                    await supabaseAdmin.rpc('capture_escrow_funds', {
+                      target_seller_id: item.seller_id,
+                      payout_amount: item.payout_amount,
+                      ref_order_id: order.id,
+                      ref_order_item_id: item.id,
+                      tx_description: `Captura Escrow: ${productTitle} (Neto: S/ ${item.payout_amount})`
+                    });
+                  }
+                }
              }
           }
 

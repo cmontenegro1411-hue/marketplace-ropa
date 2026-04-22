@@ -12,11 +12,17 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
-    console.log('[SIGNUP] Iniciando registro gratuito:', { email, name });
+    const { email, password, name, mp_user_id, mp_access_token, mp_public_key } = await req.json();
+    console.log('[SIGNUP] Intentando registro con MP:', { email, mp_user_id });
 
     if (!email || !password || !name) {
       return NextResponse.json({ message: 'Todos los campos son requeridos' }, { status: 400 });
+    }
+
+    if (!mp_user_id) {
+      return NextResponse.json({ 
+        message: 'Es indispensable vincular una cuenta de Mercado Pago para registrarse como vendedor.' 
+      }, { status: 400 });
     }
 
     // 1. Validar si el correo ya existe en `users`
@@ -32,7 +38,7 @@ export async function POST(req: Request) {
     // 2. Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // 3. Crear el usuario en la tabla `users`
+    // 3. Crear el usuario en la tabla `users` con datos de MP
     const { data: newUser, error: userErr } = await supabaseAdmin
       .from('users')
       .insert([
@@ -40,7 +46,10 @@ export async function POST(req: Request) {
           email, 
           password_hash: hashedPassword, 
           name, 
-          role: 'seller' 
+          role: 'seller',
+          mp_user_id,
+          mp_access_token,
+          mp_public_key
         }
       ])
       .select()

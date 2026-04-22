@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/brevo";
 import { processPartialRefund } from "@/lib/mercadopago";
 
+import { processEscrowRelease } from "@/lib/orders";
+
 /**
  * Acción para confirmar la recepción de un ítem por parte del comprador.
  * Esto libera los fondos al vendedor (pasa de pending a available).
@@ -18,34 +20,11 @@ export async function confirmItemReception(token: string) {
 
     const { itemId } = decoded;
 
-    const { data: item, error: fetchErr } = await supabase
-      .from('order_items')
-      .select('*, sellers:users!seller_id(id, balance_available, balance_pending)')
-      .eq('id', itemId)
-      .single();
+    const result = await processEscrowRelease(itemId);
 
-    if (fetchErr || !item) return { success: false, error: "No se encontró el ítem." };
-    if (item.status !== 'pending') return { success: false, error: "Este ítem ya no está pendiente de confirmación." };
-
-    const payoutAmount = item.payout_amount || (item.price * 0.85);
-
-    // 1. Actualizar estado
-    const { error: updateItemErr } = await supabaseAdmin
-      .from('order_items')
-      .update({ 
-        status: 'completed', 
-        received_at: new Date().toISOString(),
-        payout_released: true 
-      })
-      .eq('id', itemId);
-
-    if (updateItemErr) throw new Error("Error al actualizar estado del ítem");
-
-    // 2. Liberar fondos vía RPC
-    await supabaseAdmin.rpc('release_escrow_funds', {
-      seller_id: item.seller_id,
-      amount: payoutAmount
-    });
+    if (!result.success) {
+      return result;
+    }
 
     revalidatePath(`/order/confirm/${token}`);
     return { success: true };

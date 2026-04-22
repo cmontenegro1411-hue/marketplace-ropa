@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     // - 5% platform fee (ejemplo)
     let totalMarketplaceFee = 0;
     const preferenceItems = products.map(p => {
-      let itemFee = p.price * 0.05; // 5% base
+      let itemFee = p.price * 0.10; // 10% plataforma base
       if (p.ai_usage_type === 'on_demand') {
         itemFee += 2; // S/ 2 por uso de IA
       }
