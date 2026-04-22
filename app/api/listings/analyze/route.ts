@@ -57,19 +57,19 @@ Analizá la imagen y devolvé ÚNICAMENTE un JSON con esta estructura exacta:
 
 METODOLOGÍA DE TASACIÓN (MERCADO PERÚ):
 1. Identifica la Marca y el Tipo de Prenda.
-2. Estima el PRECIO RETAIL ACTUAL (nuevo en tienda) basándote en estos TIERS DE REFERENCIA:
-   - LUXURY (Hermès, LV, Chanel): Retail > S/ 5000.
-   - DESIGNER/PREMIUM (Gucci, Butrich, Zimmermann, Coach): Retail S/ 1000 - S/ 3000.
-   - CONTEMPORARY (Tommy, Lacoste, Calvin Klein, Michael Kors): Retail S/ 400 - S/ 900.
-   - BOUTIQUE/HIGH STREET (Massimo Dutti, Banana Republic, Zara Premium): Retail S/ 250 - S/ 500.
-   - FAST FASHION A (Zara, Mango, H&M Premium): Retail S/ 150 - S/ 300.
-   - FAST FASHION B/MASS (H&M, Forever 21, Topitop): Retail S/ 50 - S/ 150.
+2. Estima el PRECIO RETAIL (P.R.) original (valor de la prenda nueva en tienda) basándote EXCLUSIVAMENTE en Marca y Modelo detectado. El P.R. es el valor 100% y NO debe variar por el estado de la prenda.
+   - LUXURY: P.R. > S/ 5000.
+   - DESIGNER/PREMIUM: P.R. S/ 1000 - S/ 3000.
+   - CONTEMPORARY: P.R. S/ 400 - S/ 900.
+   - BOUTIQUE/HIGH STREET: P.R. S/ 250 - S/ 500.
+   - FAST FASHION A: P.R. S/ 150 - S/ 300.
+   - FAST FASHION B/MASS: P.R. S/ 50 - S/ 150.
 
-3. Aplica el multiplicador por CONDICIÓN (Jerarquía obligatoria):
-   - 'nuevo_con_etiqueta': 75% a 85% del Retail. (NUNCA menos del 70%)
-   - 'muy_buen_estado': 55% a 65% del Retail.
-   - 'buen_estado': 35% a 45% del Retail.
-   - 'con_señales_de_uso': 20% a 30% del Retail.
+3. Calcula el Precio Sugerido según CONDICIÓN:
+   - 'nuevo_con_etiqueta': 80% del P.R.
+   - 'muy_buen_estado': 60% del P.R.
+   - 'buen_estado': 40% del P.R.
+   - 'con_señales_de_uso': 25% del P.R.
 
 4. AJUSTES FINALES (+/- 15%):
    - +15% si es material noble (Cuero, Seda, Cashmere, Algodón Pima).
@@ -77,9 +77,9 @@ METODOLOGÍA DE TASACIÓN (MERCADO PERÚ):
    - -10% si el color es muy difícil o está fuera de temporada.
 
 REGLAS CRÍTICAS:
-- 'razonamiento_precio' debe ser transparente. Ejemplo: "Retail S/ 350, 80% por ser Nuevo con Etiqueta."
+- 'razonamiento_precio' debe mostrar el cálculo. Ejemplo: "Retail S/ 400 (Lacoste) -> 60% por Muy Buen Estado."
+- CONSISTENCIA: Una prenda usada NUNCA puede ser más cara que su versión 'nuevo_con_etiqueta'.
 - No inventar marcas. Si es genérico, usa Tier FAST FASHION B.
-- JERARQUÍA DE PRECIOS: Para un mismo producto, Nuevo con Etiqueta DEBE ser siempre más caro que Muy Buen Estado.
 - 'categoria' DEBE ser uno de: "Mujer", "Hombre", "Niños", "Unisex".
 - 'tipo_producto' DEBE ser uno de: "Ropa", "Calzado", "Accesorios".`;
 
