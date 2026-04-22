@@ -15,6 +15,7 @@
     "@stripe/stripe-js": "^9.1.0",
     "@supabase/supabase-js": "^2.102.1",
     "bcryptjs": "^3.0.3",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.4.1",
     "lucide-react": "^0.460.0",
     "mercadopago": "^2.12.0",
