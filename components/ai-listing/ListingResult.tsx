@@ -23,6 +23,7 @@ export interface AIResult {
   plataforma_ideal: string;
   advertencias: string[];
   modelo?: string;
+  razonamiento_precio?: string;
 }
 
 const CATEGORIES = ['Mujer', 'Hombre', 'Niños', 'Accesorios', 'Calzado'];
@@ -285,6 +286,11 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
           <div className="text-xs text-muted space-y-0.5">
             <p className="font-bold text-muted">Rango sugerido:</p>
             <p>S/ {form.precio_rango.min} — S/ {form.precio_rango.max}</p>
+            {form.razonamiento_precio && (
+              <p className="text-[10px] italic mt-1 text-primary/60 max-w-[200px]">
+                {form.razonamiento_precio}
+              </p>
+            )}
           </div>
 
           {/* Sugerencia de la IA */}
@@ -305,7 +311,12 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
               <div className="text-sm font-bold text-primary">
                 Actualizar a S/ {Math.round(suggestedUpdate.precio_sugerido)}
               </div>
-              {isLowConfidence && (
+              {suggestedUpdate.razonamiento_precio && (
+                <div className="text-[9px] text-primary/70 mt-1 leading-tight max-w-[180px]">
+                  {suggestedUpdate.razonamiento_precio}
+                </div>
+              )}
+              {isLowConfidence && !suggestedUpdate.razonamiento_precio && (
                 <div className="text-[9px] text-amber-700 mt-1 leading-tight max-w-[140px]">
                   Baja confianza en marca. Verifica que el nombre sea correcto.
                 </div>
