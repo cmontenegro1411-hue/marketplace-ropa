@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { sendEmail } from '@/lib/brevo';
+// import { sendEmail } from '@/lib/brevo'; // Movido a importación dinámica dentro de acciones para evitar ciclos de build
 import { generateConfirmToken } from "@/lib/order-tokens";
 
 
@@ -188,7 +188,7 @@ export async function completePurchase(productIds: string[], formData: any) {
     const { error } = await supabase
       .from('products')
       .update({ 
-        status: 'reserved',
+        status: 'sold',
         buyer_name: formData.name,
         buyer_phone: formData.buyer_phone,
         buyer_email: formData.email
@@ -235,18 +235,19 @@ export async function completePurchase(productIds: string[], formData: any) {
           
           emailPromises.push(sendEmail({
             to: [{ email: seller.email, name: seller.name || 'Vendedor' }],
-            subject: `🔔 ¡Venta realizada! Han separado ${sellerProducts.length} de tus prendas`,
+            subject: `🔔 ¡Venta realizada! Pago asegurado por ${sellerProducts.length} prenda(s)`,
             htmlContent: `
               <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
                 <h2 style="color: #2F3C2C; border-bottom: 2px solid #F4F1EB; padding-bottom: 10px;">¡Felicidades, ${seller.name || 'Vendedor'}!</h2>
-                <p>Un comprador ha separado prendas de tu closet en <strong>Moda Circular</strong>. Aquí tienes los detalles:</p>
+                <p>Has realizado una venta exitosa en <strong>Moda Circular</strong>. El pago del comprador ya ha sido procesado y se encuentra <strong>asegurado en fideicomiso</strong>.</p>
                 
                 <div style="background: #F9F7F2; padding: 15px; border-radius: 8px; margin: 20px 0;">
                   <h3 style="margin-top: 0; font-size: 16px;">Prendas vendidas:</h3>
                   <ul style="padding-left: 20px;">
                     ${productNames}
                   </ul>
-                  <p style="font-weight: bold;">Total a recibir: S/ ${totalAmount.toFixed(2)}</p>
+                  <p style="font-weight: bold;">Monto neto a recibir: S/ ${totalAmount.toFixed(2)}</p>
+                  <p style="font-size: 11px; color: #666;">(Menos comisiones de plataforma aplicables)</p>
                 </div>
 
                 <div style="border-left: 4px solid #D4A373; padding-left: 15px; margin: 20px 0;">
@@ -257,8 +258,9 @@ export async function completePurchase(productIds: string[], formData: any) {
                 </div>
 
                 <p style="font-size: 14px; color: #666; line-height: 1.5;">
-                  <strong>Siguiente paso:</strong> El comprador tiene tus datos y probablemente te escriba pronto por WhatsApp. 
-                  Te recomendamos ser proactivo y escribirle tú también si ves que pasan unas horas, para coordinar el pago final y la entrega.
+                  <strong>Próximo paso obligatorio:</strong> Prepara el paquete y realiza el envío a la brevedad. 
+                  Una vez enviado, ingresa a tu perfil y marca la prenda como <strong>"Enviada"</strong> para notificar al comprador.
+                  Tus fondos se liberarán automáticamente cuando el comprador confirme la recepción conforme.
                 </p>
                 
                 <div style="text-align: center; margin-top: 30px;">
@@ -372,11 +374,11 @@ export async function completePurchase(productIds: string[], formData: any) {
 
       emailPromises.push(sendEmail({
         to: [{ email: formData.email, name: formData.name }],
-        subject: `✅ ¡Confirmación de tu pedido en Moda Circular!`,
+        subject: `✅ ¡Pago recibido! Tu compra en Moda Circular está asegurada`,
         htmlContent: `
           <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
             <h2 style="color: #2F3C2C; border-bottom: 2px solid #F4F1EB; padding-bottom: 10px;">¡Gracias por tu compra, ${formData.name}!</h2>
-            <p>Has separado con éxito las siguientes prendas en <strong>Moda Circular</strong>. Estás apoyando una moda más sostenible.</p>
+            <p>Tu pago ha sido procesado correctamente. El dinero se encuentra protegido en <strong>fideicomiso</strong> y solo será liberado al vendedor cuando confirmes que recibiste tu pedido.</p>
             
             <div style="background: #F9F7F2; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <h3 style="margin-top: 0; font-size: 16px;">Resumen de tu pedido:</h3>
@@ -390,8 +392,8 @@ export async function completePurchase(productIds: string[], formData: any) {
 
             <p style="font-weight: bold; color: #D4A373;">¿Qué sigue ahora?</p>
             <p style="font-size: 14px; line-height: 1.5;">
-              Cada vendedor ha recibido tus datos y se pondrá en contacto contigo pronto para coordinar el pago final y la entrega. 
-              Si prefieres adelantarte, aquí tienes sus datos:
+              Los vendedores ya han sido notificados de tu pago y están preparando tus prendas. 
+              Recibirás un correo cuando cada paquete sea enviado. Aquí tienes los datos de contacto por si necesitas coordinar algo específico:
             </p>
 
             <div style="margin: 15px 0;">
@@ -507,6 +509,7 @@ export async function markAsShipped(productId: string, trackingNumber?: string) 
 
     // 3. Enviar Correo al Comprador (Fricción Cero)
     if (product.buyer_email) {
+      const { sendEmail } = await import('@/lib/brevo');
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
       const confirmLink = `${siteUrl}/checkout/confirm?t=${conformityToken}&p=${productId}`;
       

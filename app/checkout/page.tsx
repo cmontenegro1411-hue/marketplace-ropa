@@ -92,7 +92,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // Pantalla de Éxito (Reserva P2P)
+  // Pantalla de Éxito Local (Bypass o Éxito tras redirección si se usara estado local)
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-[#FBF9F6] flex items-center justify-center p-8 pt-20">
@@ -100,42 +100,42 @@ export default function CheckoutPage() {
           <div className="w-24 h-24 rounded-full bg-accent text-cream flex items-center justify-center mx-auto mb-8 shadow-lg">
              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">¡Prendas Reservadas!</h1>
-          <p className="text-muted text-lg leading-relaxed mb-4">
-            Hemos bloqueado estas prendas en el sistema para que nadie más pueda llevárselas.
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-4">¡Compra Completada!</h1>
+          <p className="text-muted text-lg leading-relaxed mb-6">
+            Tus prendas han sido marcadas como vendidas y el pago se encuentra <strong>asegurado en fideicomiso</strong>.
           </p>
-          <div className="bg-sand/30 p-6 rounded-2xl mb-8">
-             <p className="text-sm font-bold text-primary mb-2">Siguiente Paso Obligatorio:</p>
-             <p className="text-xs text-muted mb-4">Haz clic en los botones de abajo para abrir WhatsApp y conversar directamente con el vendedor (o vendedores) de tus prendas. Coordina con ellos el pago contraentrega y la dirección local.</p>
-             
-             <div className="flex flex-col gap-3 text-left">
-                {contacts.length > 0 ? contacts.map((seller, idx) => {
-                  const number = seller.whatsapp || "51999888777";
-                  // Formulando el mensaje amigable
-                  const msg = encodeURIComponent(`¡Hola ${seller.sellerName}! Acabo de reservar ${seller.productCount} prenda(s) tuya(s) por S/ ${seller.totalAmount.toLocaleString()} en la plataforma de Moda Circular. (${seller.productsList}). Quisiera coordinar la contraentrega contigo.`);
-                  const waLink = `https://wa.me/${number}?text=${msg}`;
-
-                  return (
-                    <a key={idx} href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-white hover:bg-[#25D366]/10 border border-[#25D366]/30 rounded-xl transition-all group">
-                       <div>
-                         <p className="text-sm font-bold text-primary">Vendedor: {seller.sellerName}</p>
-                         <p className="text-[10px] uppercase tracking-widest text-muted">{seller.productCount} prendas • S/ {seller.totalAmount.toLocaleString()}</p>
-                       </div>
-                       <div className="bg-[#25D366] text-white p-2.5 rounded-full group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.996 0A12 12 0 000 12c0 2.112.553 4.218 1.635 6.06L.01 24l6.096-1.597A11.964 11.964 0 0011.996 24 12 12 0 0024 12 12 0 0011.996 0zm6.545 17.15c-.292.833-1.42 1.574-2.193 1.616-.628.03-1.428-.15-2.527-.604-4.216-1.745-6.936-6.074-7.143-6.353-.207-.278-1.705-2.274-1.705-4.34 0-2.067 1.07-3.085 1.455-3.5.353-.38 1.05-.595 1.536-.595.143 0 .27.006.38.013.38.018.57.037.82.639.317.763 1.082 2.65 1.176 2.842.095.192.16.417.065.61-.095.192-.143.313-.284.475-.14.162-.294.354-.423.493-.143.14-.294.293-.13.578.163.284.723 1.198 1.55 1.936 1.066.953 1.956 1.25 2.15 1.346.195.096.31.082.427-.053.116-.135.5-58.58-.727.784-.81.282-.027 1.306-2.5 1.44-4.887 2.05zm0 0"/></svg>
-                       </div>
-                    </a>
-                  )
-                }) : (
-                   <p className="text-xs text-muted">No se pudo recuperar la información de contacto.</p>
-                )}
-             </div>
+          
+          <div className="bg-sand/30 p-8 rounded-3xl mb-8 border border-sand text-left">
+             <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-widest flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-accent"></span>
+               Próximos Pasos:
+             </h3>
+             <ul className="space-y-4 text-sm text-muted">
+               <li className="flex gap-3">
+                 <span className="font-bold text-primary">1.</span>
+                 <span>Los vendedores han sido notificados y procederán a preparar tus paquetes.</span>
+               </li>
+               <li className="flex gap-3">
+                 <span className="font-bold text-primary">2.</span>
+                 <span>Recibirás un correo electrónico con los detalles de tu compra y los enlaces de confirmación.</span>
+               </li>
+               <li className="flex gap-3">
+                 <span className="font-bold text-primary">3.</span>
+                 <span>Cuando recibas tus prendas, recuerda usar el enlace en tu correo para <strong>Confirmar Recepción</strong> y liberar el pago al vendedor.</span>
+               </li>
+             </ul>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-sand">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+             <Link
+               href="/profile"
+               className="px-8 py-4 bg-primary text-cream rounded-full text-xs font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md"
+             >
+               Ver mis compras
+             </Link>
              <Link
                href="/search"
-               className="inline-block px-8 py-4 bg-primary text-cream rounded-full text-xs font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md"
+               className="px-8 py-4 bg-white text-primary border border-sand rounded-full text-xs font-bold uppercase tracking-widest hover:bg-sand/10 transition-all"
              >
                Volver al catálogo
              </Link>
@@ -144,6 +144,7 @@ export default function CheckoutPage() {
       </div>
     );
   }
+
 
   if (cart.length === 0 && !isSuccess) {
     return (
@@ -166,8 +167,8 @@ export default function CheckoutPage() {
              <div className="inline-block px-4 py-1.5 border border-primary/20 rounded-full mb-4 bg-white">
                <span className="text-primary font-bold tracking-[0.5em] uppercase text-[9px]">Pago 100% Seguro</span>
             </div>
-            <h1 className="text-4xl font-serif font-bold text-primary mb-2">Checkout P2P Escrow</h1>
-            <p className="text-muted italic max-w-lg mx-auto">Ingresa tus datos y procesa el pago a través de Mercado Pago. Los fondos se liberarán al vendedor sólo cuando indiques conformidad de recepción.</p>
+            <h1 className="text-4xl font-serif font-bold text-primary mb-2">Finalizar Compra</h1>
+            <p className="text-muted italic max-w-lg mx-auto">Tu pago está protegido. Los fondos se mantienen en custodia segura y se liberan al vendedor únicamente tras tu confirmación de recepción.</p>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12">
