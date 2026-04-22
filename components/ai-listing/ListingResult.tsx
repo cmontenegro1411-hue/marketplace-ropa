@@ -56,7 +56,11 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
   const [newHashtag, setNewHashtag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [suggestedUpdate, setSuggestedUpdate] = useState<{ precio_sugerido: number; precio_rango: { min: number; max: number } } | null>(null);
+  const [suggestedUpdate, setSuggestedUpdate] = useState<{ 
+    precio_sugerido: number; 
+    precio_rango: { min: number; max: number };
+    razonamiento_precio?: string;
+  } | null>(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const lastStateRef = useRef({ brand: form.marca, type: form.tipo_prenda, condition: form.condicion });
 
