@@ -65,11 +65,11 @@ METODOLOGÍA DE TASACIÓN (MERCADO PERÚ):
    - FAST FASHION A (Zara, Mango, H&M Premium): Retail S/ 150 - S/ 300.
    - FAST FASHION B/MASS (H&M, Forever 21, Topitop): Retail S/ 50 - S/ 150.
 
-3. Aplica el multiplicador por CONDICIÓN:
-   - 'nuevo_con_etiqueta': 60% a 75% del Retail.
-   - 'muy_buen_estado': 45% a 55% del Retail.
-   - 'buen_estado': 30% a 40% del Retail.
-   - 'con_señales_de_uso': 15% a 25% del Retail.
+3. Aplica el multiplicador por CONDICIÓN (Jerarquía obligatoria):
+   - 'nuevo_con_etiqueta': 75% a 85% del Retail. (NUNCA menos del 70%)
+   - 'muy_buen_estado': 55% a 65% del Retail.
+   - 'buen_estado': 35% a 45% del Retail.
+   - 'con_señales_de_uso': 20% a 30% del Retail.
 
 4. AJUSTES FINALES (+/- 15%):
    - +15% si es material noble (Cuero, Seda, Cashmere, Algodón Pima).
@@ -77,8 +77,9 @@ METODOLOGÍA DE TASACIÓN (MERCADO PERÚ):
    - -10% si el color es muy difícil o está fuera de temporada.
 
 REGLAS CRÍTICAS:
-- 'razonamiento_precio' debe ser transparente. Ejemplo: "Retail estimado S/ 350 (Tommy), -50% por estado, +10% por material."
+- 'razonamiento_precio' debe ser transparente. Ejemplo: "Retail S/ 350, 80% por ser Nuevo con Etiqueta."
 - No inventar marcas. Si es genérico, usa Tier FAST FASHION B.
+- JERARQUÍA DE PRECIOS: Para un mismo producto, Nuevo con Etiqueta DEBE ser siempre más caro que Muy Buen Estado.
 - 'categoria' DEBE ser uno de: "Mujer", "Hombre", "Niños", "Unisex".
 - 'tipo_producto' DEBE ser uno de: "Ropa", "Calzado", "Accesorios".`;
 

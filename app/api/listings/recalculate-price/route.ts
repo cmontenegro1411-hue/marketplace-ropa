@@ -14,19 +14,21 @@ METODOLOGÍA DE TASACIÓN:
    - FAST FASHION A (Zara, Mango): Retail S/ 150 - S/ 300.
    - FAST FASHION B/MASS (H&M, Topitop): Retail S/ 50 - S/ 150.
 
-2. Aplica el % por CONDICIÓN:
-   - 'nuevo_con_etiqueta': 70% del Retail.
-   - 'muy_buen_estado': 50% del Retail.
-   - 'buen_estado': 35% del Retail.
-   - 'con_señales_de_uso': 20% del Retail.
+2. Aplica el % por CONDICIÓN (Jerarquía Estricta):
+   - 'nuevo_con_etiqueta': 80% del Retail.
+   - 'muy_buen_estado': 60% del Retail.
+   - 'buen_estado': 40% del Retail.
+   - 'con_señales_de_uso': 25% del Retail.
 
 3. Ajusta +/- 10% según la relevancia de la marca o modelo específico.
+
+REGLA DE ORO: Si para una misma marca/modelo la condición es mejor, el precio DEBE ser mayor.
 
 Devuelve EXCLUSIVAMENTE un JSON:
 {
   "precio_sugerido": number,
   "precio_rango": { "min": number, "max": number },
-  "razonamiento_precio": "Explicación breve (ej: Retail S/ 350 - 50% por estado)",
+  "razonamiento_precio": "Explicación breve (ej: Retail S/ 350, 80% por ser Nuevo)",
   "confianza_marca": number (0.0 a 1.0)
 }`;
 
