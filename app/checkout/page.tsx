@@ -80,7 +80,7 @@ export default function CheckoutPage() {
       const result = await completePurchase(cart.map(i => i.id), formData);
       if (result.success) {
         setIsSuccess(true);
-        setContacts(result.contacts || []);
+        _setContacts(result.contacts || []);
         clearCart();
       } else {
         throw new Error(result.error || 'Error en Bypass');
