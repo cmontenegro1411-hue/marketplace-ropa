@@ -28,7 +28,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/mercadopago/url');
       const { url } = await res.json();
       if (url) window.location.href = url;
-    } catch (err) {
+    } catch (_err) {
       setError('Error al conectar con Mercado Pago');
     } finally {
       setIsLoading(false);

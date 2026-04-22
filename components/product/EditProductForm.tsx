@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Container } from "@/components/ui/Container";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/Button";
 import { uploadMultipleImages } from "@/lib/storage";
 import { updateListing } from "@/app/actions/product-actions";

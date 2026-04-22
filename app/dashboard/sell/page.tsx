@@ -10,7 +10,6 @@ import Link from 'next/link';
 
 const SellPage = () => {
   const router = useRouter();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [images, setImages] = useState<File[]>([]);
@@ -35,11 +34,9 @@ const SellPage = () => {
       const newPreviews = newFiles.map(file => URL.createObjectURL(file));
       setPreviews(prev => [...prev, ...newPreviews]);
 
-      // Soft AI Simulation (Greeting instead of forced values)
-      setIsAnalyzing(true);
+      // Soft AI Simulation (no forced values)
       setTimeout(() => {
-        setIsAnalyzing(false);
-        // We don't force values anymore so it doesn't say "Nike" for a shirt
+        // Auto-analysis complete
       }, 1000);
     }
   };

@@ -5,7 +5,7 @@ export const uploadProductImage = async (file: File): Promise<string | null> => 
   const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
   const filePath = `product-images/${fileName}`;
 
-  const { data, error } = await supabase.storage
+  const { data: _data, error } = await supabase.storage
     .from('products')
     .upload(filePath, file);
 
@@ -40,11 +40,11 @@ export const uploadMultipleImagesViaAPI = async (files: File[]): Promise<string[
     body: formData,
   });
 
-  const data = await response.json();
+  const json = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Error al subir imágenes al servidor');
+    throw new Error(json.error || 'Error al subir imágenes al servidor');
   }
 
-  return data.urls as string[];
+  return json.urls as string[];
 };

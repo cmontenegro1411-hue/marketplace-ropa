@@ -2,8 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { 
   TrendingUp, 
   Users as UsersIcon, 
-  Clock, 
-  Package 
+  Clock
 } from "lucide-react";
 
 export const revalidate = 0; // Datos siempre frescos

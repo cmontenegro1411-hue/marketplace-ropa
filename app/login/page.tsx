@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 import { signIn } from "next-auth/react";
 
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -35,7 +33,7 @@ const LoginForm = () => {
       } else {
         router.push('/search');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Ocurrió un error al intentar iniciar sesión.');
     } finally {
       setIsLoading(false);

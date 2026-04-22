@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { confirmConformityPublic } from "@/app/actions/product-actions";
 import { ConformityForm } from "./ConformityForm";
 import Link from 'next/link';
 import { Navbar } from '@/components/ui/Navbar';
@@ -61,7 +60,7 @@ export default async function ConfirmConformityPage({ searchParams }: ConfirmPag
           <p className="text-muted italic mb-10 text-lg">¿Has recibido tu prenda y estás conforme con ella?</p>
 
           <div className="bg-cream/30 p-8 rounded-3xl border border-sand mb-10 flex flex-col md:flex-row items-center gap-6 text-left">
-            <img src={product.images?.[0] || '/placeholder.png'} className="w-24 h-32 object-cover rounded-2xl shadow-md" />
+            <img src={product.images?.[0] || '/placeholder.png'} alt={product.title} className="w-24 h-32 object-cover rounded-2xl shadow-md" />
             <div>
                <p className="text-xs font-bold uppercase tracking-widest text-muted mb-1">{product.brand}</p>
                <h3 className="text-xl font-serif font-bold text-primary mb-2">{product.title}</h3>

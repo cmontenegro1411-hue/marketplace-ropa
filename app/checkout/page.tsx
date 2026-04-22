@@ -15,11 +15,11 @@ if (process.env.NEXT_PUBLIC_MP_PUBLIC_KEY) {
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
-  const { data: session } = useSession();
+  const { data: _session } = useSession();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [_contacts, _setContacts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',

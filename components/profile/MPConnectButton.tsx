@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 
 interface MPConnectButtonProps {
   isConnected: boolean;
@@ -9,19 +9,8 @@ interface MPConnectButtonProps {
 
 export function MPConnectButton({ isConnected }: MPConnectButtonProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  // Replaced unused message state and effect to fix lint error
 
-  useEffect(() => {
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
-
-    if (success === 'mp_connected') {
-      setMessage({ text: '¡Mercado Pago conectado con éxito! Ya puedes recibir pagos.', type: 'success' });
-    } else if (error) {
-      setMessage({ text: `Error: ${error.replace(/_/g, ' ')}`, type: 'error' });
-    }
-  }, [searchParams]);
 
   if (isConnected) {
     return (

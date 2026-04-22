@@ -2,7 +2,6 @@ import React from 'react';
 import { supabase } from "@/lib/supabase";
 import { Container } from "@/components/ui/Container";
 import { Navbar } from "@/components/ui/Navbar";
-import { Button } from "@/components/ui/Button";
 import Link from 'next/link';
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 
@@ -45,7 +44,7 @@ export default async function ProductDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
           {/* Image Gallery Side */}
           <div className="space-y-6">
-            <div className="aspect-[3/4] rounded-3xl overflow-hidden bg-white border border-sand shadow-sm">
+            <div className="aspect-[3/4] rounded-3xl overflow-hidden bg-white border border-sand shadow-sm relative">
               <img 
                 src={product.images?.[0] || '/placeholder-product.png'} 
                 alt={product.title}

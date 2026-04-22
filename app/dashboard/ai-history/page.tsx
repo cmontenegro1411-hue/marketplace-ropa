@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import { Container } from "@/components/ui/Container";
 import { auth } from "@/auth";
-import { supabase } from "@/lib/supabase";
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -36,7 +35,7 @@ export default async function AIHistoryDashboard() {
   // Métricas Calculadas
   const totalGenerations = validLogs.length;
   const successful = validLogs.filter(l => l.success).length;
-  const failed = totalGenerations - successful;
+  const _failed = totalGenerations - successful;
   const totalCost = validLogs.reduce((sum, l) => sum + (l.cost_usd || 0), 0);
   const successRate = totalGenerations > 0 ? Math.round((successful / totalGenerations) * 100) : 0;
   

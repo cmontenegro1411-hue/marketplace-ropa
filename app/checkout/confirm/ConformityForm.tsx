@@ -25,7 +25,7 @@ export function ConformityForm({ productId, token }: ConformityFormProps) {
       } else {
         setError(res.error || 'Error al confirmar');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Error inesperado');
     } finally {
       setIsProcessing(false);

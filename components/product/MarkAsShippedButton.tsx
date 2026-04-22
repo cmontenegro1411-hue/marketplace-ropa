@@ -23,7 +23,7 @@ export const MarkAsShippedButton = ({ productId, title }: MarkAsShippedButtonPro
       } else {
         alert(res.error || 'Error al actualizar el estado.');
       }
-    } catch (error) {
+    } catch (_error) {
       alert('Error inesperado.');
     } finally {
       setIsProcessing(false);

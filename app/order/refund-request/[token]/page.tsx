@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, use } from 'react';
-import { useRouter } from 'next/navigation';
 import { AlertTriangle, Home, Mail, ShieldAlert, Loader2 } from 'lucide-react';
 import { disputeOrderItem } from '@/app/actions/order-actions';
 import Link from 'next/link';
@@ -21,7 +20,7 @@ export default function RefundRequestPage({ params }: { params: Promise<{ token:
         setStatus('error');
         setErrorMsg(result.error || 'No pudimos procesar la solicitud.');
       }
-    } catch (err) {
+    } catch (_err) {
       setStatus('error');
       setErrorMsg('Error de conexión.');
     }

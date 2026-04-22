@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, use } from 'react';
-import { useRouter } from 'next/navigation';
 import { CheckCircle2, PackageSearch, ShieldCheck, AlertCircle, Loader2, ArrowRight, Home } from 'lucide-react';
 import { confirmReturnAndRefund } from '@/app/actions/order-actions';
 import Link from 'next/link';
 
 export default function ConfirmReturnPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
-  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<'ready' | 'loading' | 'success' | 'error'>('ready');
   const [errorMessage, setErrorMessage] = useState('');
@@ -26,7 +24,7 @@ export default function ConfirmReturnPage({ params }: { params: Promise<{ token:
         setStatus('error');
         setErrorMessage(result.error || 'No pudimos validar la recepción del retorno.');
       }
-    } catch (err) {
+    } catch (_err) {
       setStatus('error');
       setErrorMessage('Error de conexión con la plataforma.');
     } finally {

@@ -1,17 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Container } from "@/components/ui/Container";
 import Link from 'next/link';
 
 export default function SuccessPage() {
-  const [credits, setCredits] = useState<string>('');
-
-  useEffect(() => {
-    // Basic extraction from URL params (just for display)
-    const params = new URLSearchParams(window.location.search);
-    setCredits(params.get('credits') || 'X');
-  }, []);
+  const searchParams = useSearchParams();
+  const credits = searchParams.get('credits') || 'X';
 
   return (
     <div className="min-h-screen bg-[#FBF9F6] flex flex-col items-center justify-center p-4">

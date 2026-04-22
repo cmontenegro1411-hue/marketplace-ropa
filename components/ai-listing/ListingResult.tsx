@@ -59,6 +59,16 @@ const PR_MULTIPLIERS: Record<string, number> = {
   con_señales_de_uso: 0.25,
 };
 
+// Función de cálculo local determinístico (fuera del componente para estabilidad)
+const calculateResalePrice = (retail: number, condition: string) => {
+  const multiplier = PR_MULTIPLIERS[condition] || 0.40;
+  let suggested = retail * multiplier;
+  if (suggested < 5) suggested = 5;
+  const min = Math.floor(suggested * 0.85);
+  const max = Math.ceil(suggested * 1.15);
+  return { suggested, range: { min, max } };
+};
+
 export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: ListingResultProps) => {
   const router = useRouter();
   const [form, setForm] = useState<AIResult>({ ...result });
@@ -73,24 +83,15 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
   } | null>(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const lastStateRef = useRef({ brand: form.marca, type: form.tipo_prenda, model: form.modelo });
+  const retailPriceRef = useRef(form.precio_original_estimado);
 
   const updateField = <K extends keyof AIResult>(key: K, value: AIResult[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Función de cálculo local determinístico
-  const calculateResalePrice = (retail: number, condition: string) => {
-    const multiplier = PR_MULTIPLIERS[condition] || 0.40;
-    let suggested = retail * multiplier;
-
-    // Asegurar un mínimo de S/ 5 para que nada sea S/ 0
-    if (suggested < 5) suggested = 5;
-
-    // Rangos dinámicos (+/- 15%) para mayor veracidad
-    const min = Math.floor(suggested * 0.85);
-    const max = Math.ceil(suggested * 1.15);
-
-    return { suggested, range: { min, max } };
-  };
+  // Sincronizar ref cuando cambia el retail
+  useEffect(() => {
+    retailPriceRef.current = form.precio_original_estimado;
+  }, [form.precio_original_estimado]);
 
   // Efecto 1: Recalcular precio localmente cuando cambia retail o condición
   useEffect(() => {
@@ -105,16 +106,13 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
 
   // Efecto adicional: Mantener el rango actualizado si el usuario edita el precio sugerido manualmente
   useEffect(() => {
-    const min = Math.floor(form.precio_sugerido * 0.85);
-    const max = Math.ceil(form.precio_sugerido * 1.15);
-    
-    // Solo actualizamos si el rango actual es distinto para evitar bucles
-    if (form.precio_rango.min !== min || form.precio_rango.max !== max) {
-      setForm(prev => ({
-        ...prev,
-        precio_rango: { min, max }
-      }));
-    }
+    setForm(prev => {
+      const min = Math.floor(prev.precio_sugerido * 0.85);
+      const max = Math.ceil(prev.precio_sugerido * 1.15);
+      // Solo actualizamos si el rango actual es distinto para evitar bucles
+      if (prev.precio_rango.min === min && prev.precio_rango.max === max) return prev;
+      return { ...prev, precio_rango: { min, max } };
+    });
   }, [form.precio_sugerido]);
 
   // Efecto 2: Smart Pricing Reactivo (Solo cuando cambia Marca/Modelo/Tipo para ajustar Retail)
@@ -157,7 +155,8 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
           }
 
           // Si el retail estimado es distinto, sugerimos actualizar el Retail base
-          if (Math.round(json.data.precio_retail_estimado) !== Math.round(form.precio_original_estimado)) {
+          // Usamos la ref para evitar añadir precio_original_estimado como dependencia (evita loop)
+          if (Math.round(json.data.precio_retail_estimado) !== Math.round(retailPriceRef.current)) {
             setSuggestedUpdate({
               precio_sugerido: json.data.precio_retail_estimado,
               precio_rango: { min: 0, max: 0 }, // No se usa para sugerencia de retail
@@ -250,7 +249,6 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
   const confidencePct = Math.round((form.confianza_marca ?? 0) * 100);
 
   const isLowConfidence = (form.confianza_marca ?? 1) < 0.4;
-  const isBoutiquePotential = form.marca?.toLowerCase().includes('trich') || form.modelo?.toLowerCase().includes('heart');
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">

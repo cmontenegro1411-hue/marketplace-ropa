@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
 import { MPConnectButton } from "@/components/profile/MPConnectButton";
-import { BuyerConformityButton } from "@/components/profile/BuyerConformityButton";
 import { WalletHistory } from "@/components/profile/WalletHistory";
 import { Suspense } from 'react';
 import Link from 'next/link';
@@ -42,11 +41,11 @@ export default async function ProfilePage() {
   const balanceAvailable = userData?.balance_available || 0;
 
   // Obtener mis compras (donde soy el comprador)
-  const { data: myPurchases } = await supabase
+  /* const { data: myPurchases } = await supabase
     .from('products')
     .select('*')
     .eq('buyer_email', session.user.email)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }); */
 
   // Obtener historial de billetera
   const { data: walletTransactions } = await supabase
@@ -63,7 +62,6 @@ export default async function ProfilePage() {
   
   // Obtener información de créditos unificada
   const creditInfo = await getOrCreateCredits(session.user.id as string);
-  const creditsRemaining = isAdmin ? '∞' : creditInfo.credits_remaining;
 
   // Calcular estadísticas dinámicas reales
   const activeProducts = myProducts?.filter(p => !p.status || p.status === 'available') || [];

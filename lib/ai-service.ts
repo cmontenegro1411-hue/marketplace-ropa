@@ -11,7 +11,7 @@ export interface AIAttributes {
   confidence: number;
 }
 
-export const analyzeProductImage = async (imageFile: File | string): Promise<AIAttributes> => {
+export const analyzeProductImage = async (_imageFile: File | string): Promise<AIAttributes> => {
   // Simulating network delay for AI processing
   await new Promise(resolve => setTimeout(resolve, 2000));
 

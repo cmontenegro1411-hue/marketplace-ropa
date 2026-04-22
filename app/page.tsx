@@ -1,6 +1,5 @@
 import { Navbar } from "@/components/ui/Navbar";
 import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -19,7 +18,7 @@ export default async function Home() {
         .order('created_at', { ascending: false })
         .limit(4);
       return data || [];
-    } catch (e) {
+    } catch (_e) {
       return [];
     }
   }

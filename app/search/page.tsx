@@ -22,7 +22,6 @@ export default async function SearchPage({
   const { data: sample } = await supabase.from('products').select('*').limit(1);
   const columns = sample && sample.length > 0 ? Object.keys(sample[0]) : [];
   
-  const hasStatus = columns.includes('status');
   const hasCategorySingular = columns.includes('category');
   const hasCategoriesPlural = columns.includes('categories');
   const hasBrand = columns.includes('brand');
@@ -83,7 +82,7 @@ export default async function SearchPage({
           <h1 className="text-4xl lg:text-5xl font-serif font-bold text-primary mb-2 tracking-tight">Catálogo Curado</h1>
           {query && (
             <p className="text-secondary font-medium italic">
-              Resultados para: "{query}"
+              Resultados para: &quot;{query}&quot;
             </p>
           )}
         </header>

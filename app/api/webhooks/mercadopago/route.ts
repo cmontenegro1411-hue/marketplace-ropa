@@ -22,9 +22,11 @@ export async function POST(req: NextRequest) {
         const metadata = paymentData.external_reference ? JSON.parse(paymentData.external_reference) : {};
         const { productIds } = metadata;
 
+        console.log(`[Webhook MP] Pago Aprobado: ${dataId}. Productos:`, productIds);
+
         if (productIds && productIds.length > 0) {
           // 1. Actualizar productos a 'sold' y asignar comprador info del pago
-          await supabaseAdmin
+          const { error: prodUpdateError } = await supabaseAdmin
             .from('products')
             .update({ 
                status: 'sold',
@@ -33,32 +35,44 @@ export async function POST(req: NextRequest) {
             })
             .in('id', productIds);
 
+          if (prodUpdateError) {
+            console.error("[Webhook MP] Error actualizando productos:", prodUpdateError);
+          }
+
           // 3. OBTENER DETALLES EXTENDIDOS (Para Escrow y correos)
-          const { data: fullProducts } = await supabaseAdmin
+          const { data: fullProducts, error: fullProdError } = await supabaseAdmin
             .from('products')
             .select('id, title, price, brand, seller_id, users!inner(email, name, whatsapp_number)')
             .in('id', productIds);
 
+          if (fullProdError) {
+            console.error("[Webhook MP] Error obteniendo detalles de productos:", fullProdError);
+          }
+
           // 2. Registrar/Actualizar Orden
-          const { data: order } = await supabaseAdmin
+          const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert({
               mp_payment_id: dataId,
               payment_status: 'completed',
               total_amount: paymentData.transaction_amount,
-              mp_application_fee: (paymentData as any).marketplace_fee || 0,
+              mp_application_fee: (paymentData as any).marketplace_fee || (paymentData as any).fee_details?.find((f: any) => f.type === 'application_fee')?.amount || 0,
               buyer_email: paymentData.payer?.email,
               items: productIds
             })
             .select()
             .single();
 
+          if (orderError) {
+            console.error("[Webhook MP] Error insertando orden:", orderError);
+          }
+
           if (order) {
              // --- CÁLCULO DE COMISIONES (10% Plataforma + Fees MP) ---
              const totalPaid = paymentData.transaction_amount || 0;
-             const totalMpFees = paymentData.fee_details?.reduce((acc: number, fee: any) => {
+             const totalMpFees = (paymentData as any).fee_details?.reduce((acc: number, fee: any) => {
                // Sumamos los fees que cobra MP (no incluimos application_fee si lo hubiera porque ese es nuestro)
-               if (fee.type === 'mercadopago_fee') return acc + (fee.amount || 0);
+               if (fee.type === 'mercadopago_fee' || fee.fee_payer === 'collector') return acc + (fee.amount || 0);
                return acc;
              }, 0) || 0;
 

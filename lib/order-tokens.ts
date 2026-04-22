@@ -38,7 +38,7 @@ export function verifyConfirmToken(token: string): { itemId: string; orderId: st
     if (Date.now() - parseInt(timestamp) > thirtyDays) return null;
 
     return { itemId, orderId };
-  } catch (err) {
+  } catch (_err) {
     return null;
   }
 }

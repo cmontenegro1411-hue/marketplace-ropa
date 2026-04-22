@@ -96,7 +96,7 @@ export default function AIListingPage() {
       } else {
         alert(data.error || 'Error al comprar créditos');
       }
-    } catch (err) {
+    } catch (_err) {
       alert('Error de conexión');
     } finally {
       setIsBuying(false);

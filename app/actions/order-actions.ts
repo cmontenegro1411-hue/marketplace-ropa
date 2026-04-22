@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase } from "@/lib/supabase";
+
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyConfirmToken } from "@/lib/order-tokens";
 import { revalidatePath } from "next/cache";

@@ -103,7 +103,7 @@ export const Navbar = () => {
                         {suggestions.map((item) => (
                           <Link key={item.id} href={`/product/${item.id}`} onClick={() => setIsSearchOpen(false)} className="flex items-center gap-4 p-3 hover:bg-cream rounded-xl transition-colors">
                             <div className="w-10 h-10 bg-sand/30 rounded overflow-hidden">
-                              <img src={item.images?.[0] || '/placeholder.png'} className="w-full h-full object-cover" />
+                              <img src={item.images?.[0] || '/placeholder.png'} alt={item.title} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-primary truncate">{item.title}</p>

@@ -21,7 +21,7 @@ export const BuyerConformityButton = ({ productId }: BuyerConformityButtonProps)
       if (!res.success) {
         alert(res.error || 'Error al confirmar conformidad');
       }
-    } catch (error) {
+    } catch (_error) {
       alert('Error inesperado');
     } finally {
       setIsConfirming(false);

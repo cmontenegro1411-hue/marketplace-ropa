@@ -1,20 +1,20 @@
 import { supabaseAdmin } from "../lib/supabase-admin.js";
 
 /**
- * Script de automatización para liberar fondos de Escrow tras 48 horas de inactividad.
+ * Script de automatización para liberar fondos de Escrow tras 72 horas de inactividad.
  * Este script debe ser ejecutado periódicamente (ej. vía CRON o Vercel Cron).
  */
 async function autoReleaseFunds() {
   console.log("🚀 Iniciando proceso de liberación automática de Escrow...");
 
-  const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
 
-  // 1. Buscar order_items en estado 'pending' creados hace más de 48 horas
+  // 1. Buscar order_items en estado 'pending' creados hace más de 72 horas
   const { data: items, error: fetchErr } = await supabaseAdmin
     .from('order_items')
     .select('*, sellers(id, balance_available, balance_pending)')
     .eq('status', 'pending')
-    .lt('created_at', fortyEightHoursAgo);
+    .lt('created_at', seventyTwoHoursAgo);
 
   if (fetchErr) {
     console.error("❌ Error al obtener ítems pendientes:", fetchErr);

@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, use } from 'react';
 import { CheckCircle2, Package, ShieldCheck, AlertCircle, Loader2, ArrowRight, Home } from 'lucide-react';
 import { confirmItemReception } from '@/app/actions/order-actions';
 import Link from 'next/link';
 
 export default function ConfirmReceptionPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
-  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<'loading' | 'ready' | 'success' | 'error'>('ready');
   const [errorMessage, setErrorMessage] = useState('');
@@ -26,7 +24,7 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
         setStatus('error');
         setErrorMessage(result.error || 'No pudimos procesar la confirmación.');
       }
-    } catch (err) {
+    } catch (_err) {
       setStatus('error');
       setErrorMessage('Ocurrió un error inesperado.');
     } finally {
