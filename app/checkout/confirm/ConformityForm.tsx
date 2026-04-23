@@ -35,11 +35,22 @@ export function ConformityForm({ productId, token }: ConformityFormProps) {
   if (isSuccess) {
     return (
       <div className="animate-in zoom-in fade-in duration-500 text-center">
-        <div className="bg-[#00E0A6]/10 text-[#008F6A] p-8 rounded-3xl border border-[#00E0A6]/20">
+        <div className="bg-[#00E0A6]/10 text-[#008F6A] p-8 rounded-3xl border border-[#00E0A6]/20 mb-8">
            <h2 className="text-2xl font-serif font-bold mb-2">¡Confirmación Exitosa!</h2>
-           <p className="text-sm">Gracias por ayudarnos a mantener segura la comunidad de Moda Circular.</p>
+           <p className="text-sm">Gracias por ayudarnos a mantener segura la comunidad de Moda Circular. El pago ha sido liberado al vendedor.</p>
         </div>
-        <p className="mt-8 text-muted text-[10px] uppercase tracking-widest font-bold">Puedes cerrar esta ventana ahora.</p>
+        
+        <div className="space-y-4">
+          <a 
+            href="/" 
+            className="inline-block px-10 py-4 bg-primary text-cream rounded-full font-bold uppercase text-xs tracking-widest shadow-lg hover:bg-primary/90 transition-all"
+          >
+            Volver al Inicio
+          </a>
+          <p className="text-muted text-[10px] uppercase tracking-widest font-bold block">
+            Puedes cerrar esta pestaña de forma segura
+          </p>
+        </div>
       </div>
     );
   }
