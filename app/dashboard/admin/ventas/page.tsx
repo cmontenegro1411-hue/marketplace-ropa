@@ -8,7 +8,6 @@ export default async function AdminSalesPage() {
   const { data: orders, error } = await supabaseAdmin
     .from('orders')
     .select('*')
-    .eq('payment_status', 'completed')
     .order('created_at', { ascending: false });
 
   if (error) {
