@@ -59,7 +59,7 @@ export default async function ProfilePage() {
     .select('*')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
-    .limit(10);
+    .limit(50);
 
   if (productsError) console.error("Error fetching user products:", productsError);
 
