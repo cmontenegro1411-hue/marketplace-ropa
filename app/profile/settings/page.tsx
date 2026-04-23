@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { Navbar } from "@/components/ui/Navbar";
 import Link from 'next/link';
 import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
 import { redirect } from 'next/navigation';
 
@@ -29,13 +30,23 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
 
   if (error) console.error("Error fetching for reports:", error);
 
+  // Fetch real User Balance (Escrow)
+  const { data: userData } = await supabaseAdmin
+    .from('users')
+    .select('balance_pending, balance_available')
+    .eq('id', session.user.id)
+    .single();
+
+  const balancePending = userData?.balance_pending || 0;
+  const balanceAvailable = userData?.balance_available || 0;
+
   const soldProducts = myProducts?.filter(p => p.status === 'sold') || [];
   const totalEarnings = soldProducts.reduce((acc, curr) => acc + (curr.price || 0), 0);
   const totalItemsSold = soldProducts.length;
   const totalPublished = myProducts?.length || 0;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(amount);
   };
 
   return (
@@ -108,10 +119,12 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                   <p className="text-xs text-muted mt-2">De {totalPublished} publicadas</p>
                 </div>
 
-                <div className="p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow opacity-60">
+                <div className={`p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow ${balancePending === 0 ? 'opacity-60' : ''}`}>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Próximo Pago</p>
-                  <p className="text-3xl font-serif font-bold text-secondary mt-1">S/ 0</p>
-                  <p className="text-xs text-muted mt-2">No hay pagos en tránsito</p>
+                  <p className="text-3xl font-serif font-bold text-secondary mt-1">{formatCurrency(balancePending)}</p>
+                  <p className="text-xs text-muted mt-2">
+                    {balancePending > 0 ? 'Fondos en proceso de liberación' : 'No hay pagos en tránsito'}
+                  </p>
                 </div>
               </div>
 
