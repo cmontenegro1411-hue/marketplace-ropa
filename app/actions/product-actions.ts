@@ -288,8 +288,11 @@ export async function completePurchase(productIds: string[], formData: any) {
     // 🟢 REGISTRAR LA ORDEN EN SUPABASE (Primero para tener el ID para los links)
     const totalOrder = products!.reduce((sum, p) => sum + p.price, 0);
     const orderItemsSummary = products!.map(p => ({ title: p.title, brand: p.brand, price: p.price }));
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moda-circular.vercel.app';
 
-    const { data: orderRecord, error: orderErr } = await supabase
+    console.log(`[completePurchase] Registrando orden. Total: S/${totalOrder}. Productos: ${productIds.length}. SITE_URL: ${siteUrl}`);
+
+    const { data: orderRecord, error: orderErr } = await supabaseAdmin
       .from('orders')
       .insert({
         buyer_name: formData.name,
@@ -305,8 +308,10 @@ export async function completePurchase(productIds: string[], formData: any) {
       .single();
 
     if (orderErr) {
-       console.error('[Orders DB] Error al guardar orden en Supabase:', orderErr.message);
+       console.error('[Orders DB] ❌ Error al guardar orden en Supabase:', orderErr.message, orderErr.code, orderErr.details);
+       // No hacemos return para que los correos igualmente se intenten enviar
     } else if (orderRecord) {
+       console.log(`[Orders DB] ✅ Orden registrada con ID: ${orderRecord.id}`);
        // 🟢 REGISTRAR ITEMS INDIVIDUALES Y CAPTURAR FONDOS EN ESCROW
        for (const p of products!) {
          const payoutAmount = p.price * 0.90; // 10% comisión plataforma (sin fee de MP en bypass)
@@ -324,15 +329,20 @@ export async function completePurchase(productIds: string[], formData: any) {
            .select('id')
            .single();
 
-         if (!itemErr && itemRecord) {
+         if (itemErr) {
+           console.error(`[Orders DB] ❌ Error insertando order_item para producto ${p.id}:`, itemErr.message);
+         } else if (itemRecord) {
+           console.log(`[Orders DB] ✅ Order item registrado: ${itemRecord.id} para producto ${p.id}`);
            // Invocar RPC de captura para auditoría y balance_pending
-           await supabaseAdmin.rpc('capture_escrow_funds', {
+           const { error: rpcErr } = await supabaseAdmin.rpc('capture_escrow_funds', {
              target_seller_id: p.seller_id,
              payout_amount: payoutAmount,
              ref_order_id: orderRecord.id,
              ref_order_item_id: itemRecord.id,
              tx_description: `Venta (Bypass): ${p.brand} ${p.title}`
            });
+           if (rpcErr) console.error(`[Escrow] ❌ Error en capture_escrow_funds:`, rpcErr.message);
+           else console.log(`[Escrow] ✅ Fondos capturados para vendedor ${p.seller_id}`);
          }
        }
     }
@@ -344,41 +354,50 @@ export async function completePurchase(productIds: string[], formData: any) {
     revalidatePath('/dashboard/admin/vendedores');
 
     // 🟢 NOTIFICAR AL COMPRADOR POR CORREO
-    if (formData.email && orderRecord) {
-      // Obtener los IDs de los order_items recién creados para generar tokens por ítem
-      // IMPORTANTE: usar supabaseAdmin para evitar que RLS bloquee la lectura
-      const { data: savedItems } = await supabaseAdmin
-        .from('order_items')
-        .select('id, product_id')
-        .eq('order_id', orderRecord.id);
+    console.log(`[Email] Intentando enviar correo al comprador: ${formData.email}. OrderRecord: ${orderRecord?.id || 'NO CREADA'}`);
+    if (formData.email) {
+      let itemsWithTokens: any[] = [];
 
-      const itemsWithTokens = products!.map(p => {
-        const orderItemId = savedItems?.find(si => si.product_id === p.id)?.id;
-        if (!orderItemId) console.warn(`[Token] No se encontró order_item para product_id=${p.id}`);
-        const token = orderItemId ? generateConfirmToken(orderItemId, orderRecord.id) : '';
-        return { ...p, token };
-      });
+      // Si tenemos la orden registrada, generamos tokens por item para los links
+      if (orderRecord) {
+        const { data: savedItems } = await supabaseAdmin
+          .from('order_items')
+          .select('id, product_id')
+          .eq('order_id', orderRecord.id);
+
+        itemsWithTokens = products!.map(p => {
+          const orderItemId = savedItems?.find(si => si.product_id === p.id)?.id;
+          if (!orderItemId) console.warn(`[Token] No se encontró order_item para product_id=${p.id}`);
+          const token = orderItemId ? generateConfirmToken(orderItemId, orderRecord.id) : '';
+          return { ...p, token };
+        });
+      } else {
+        // Si no se creó la orden, enviamos el correo sin tokens (links de perfil)
+        console.warn('[Email] Enviando correo al comprador SIN tokens (orden no registrada)');
+        itemsWithTokens = products!.map(p => ({ ...p, token: '' }));
+      }
 
       const allProductsList = itemsWithTokens.map(p => `
         <li style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #D4A373; background: #fff; border-radius: 8px;">
           <strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}<br/>
+          ${p.token ? `
           <div style="margin-top: 12px; display: flex; gap: 10px;">
             <div style="display: inline-block; vertical-align: top; width: 45%;">
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/confirm/${p.token}" 
+              <a href="${siteUrl}/order/confirm/${p.token}" 
                  style="display: inline-block; background: #2F3C2C; color: white; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmar Recibido</a>
               <p style="margin: 5px 0 0 0; font-size: 9px; color: #666; line-height: 1.2;">Usa esta opción si ya tienes tu prenda y todo está perfecto. Libera el pago al vendedor.</p>
             </div>
             <div style="display: inline-block; vertical-align: top; width: 45%; margin-left: 5%;">
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/refund-request/${p.token}" 
+              <a href="${siteUrl}/order/refund-request/${p.token}" 
                  style="display: inline-block; font-size: 11px; background: #fff; color: #cc3333; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-weight: bold; text-transform: uppercase; border: 1px solid #cc3333;">
                  ❌ Solicitar Devolución
               </a>
               <p style="margin: 5px 0 0 0; font-size: 10px; color: #cc3333; line-height: 1.2;">¿Algún problema? Haz clic para bloquear el pago e iniciar la devolución.</p>
             </div>
           </div>
+          ` : '<p style="font-size: 11px; color: #666; margin-top: 8px;">Para gestionar esta compra, visita tu perfil en la plataforma.</p>'}
         </li>
       `).join('');
-      const totalOrder = products!.reduce((sum, p) => sum + p.price, 0);
 
       emailPromises.push(sendEmail({
         to: [{ email: formData.email, name: formData.name }],
@@ -420,7 +439,7 @@ export async function completePurchase(productIds: string[], formData: any) {
             </p>
           </div>
         `
-      }).catch(err => console.error(`Error enviando confirmación al comprador:`, err)));
+      }).catch(err => console.error(`[Email] ❌ Error enviando confirmación al comprador:`, err)));
     }
 
     // 🟢 ESPERAR A QUE TODOS LOS CORREOS SE ENVÍEN ANTES DE TERMINAR
@@ -457,9 +476,38 @@ export async function markAsAvailable(productId: string) {
       return { success: false, error: "No tienes permiso para actualizar este producto." };
     }
 
+    // 2. Buscar si tiene un ítem de orden pendiente para revertir saldo
+    const { data: orderItem } = await supabaseAdmin
+      .from('order_items')
+      .select('id, payout_amount, seller_id')
+      .eq('product_id', productId)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (orderItem) {
+      console.log(`[Escrow] Revirtiendo fondos para el producto ${productId}. Item: ${orderItem.id}`);
+      const { error: rpcErr } = await supabaseAdmin.rpc('revert_escrow_funds', {
+        target_seller_id: orderItem.seller_id,
+        payout_to_revert: orderItem.payout_amount,
+        ref_order_item_id: orderItem.id,
+        tx_description: "Cancelación: Producto devuelto a disponible por el vendedor"
+      });
+
+      if (rpcErr) {
+        console.error("[Escrow] Error revert_escrow_funds:", rpcErr.message);
+        // Continuamos para al menos liberar el producto, pero logueamos el error
+      }
+    }
+
+    // 3. Actualizar estado del producto
     const { error } = await supabase
       .from('products')
-      .update({ status: 'available' })
+      .update({ 
+        status: 'available',
+        buyer_name: null,
+        buyer_phone: null,
+        buyer_email: null
+      })
       .eq('id', productId);
 
     if (error) {
@@ -470,6 +518,7 @@ export async function markAsAvailable(productId: string) {
     revalidatePath('/search');
     revalidatePath(`/product/${productId}`);
     revalidatePath('/profile');
+    revalidatePath('/dashboard/admin/vendedores');
 
     return { success: true };
   } catch (error: any) {

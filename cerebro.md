@@ -63,6 +63,7 @@
 
 ## 5. CHANGELOG
 
+- **[23-04-2026] - v1.7.3:** Estabilización de notificaciones por correo en producción. Configuración de variables de entorno de Brevo en Vercel. Corrección de `NEXT_PUBLIC_SITE_URL` para enlaces funcionales de confirmación y devolución. Refactorización de `completePurchase` para mayor resiliencia ante errores de base de datos.
 - **[22-04-2026] - v1.7.2:** Actualización del modelo Escrow a **Centralizado con Billetera Virtual**. Se eliminan las integraciones individuales de Mercado Pago. Implementación de RPCs atómicos para control de saldos y auditoría. Corrección de caché de Next.js en el frontend. Enlaces email a `base64url`.
 - **[22-04-2026] - v1.7.0:** Reestructuración profunda. Registro gratuito. Créditos IA independizados. Escrow a 72h.
 - **[Previo]:** Eliminación flujos Pay-First.

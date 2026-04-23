@@ -53,7 +53,6 @@ export async function POST(req: NextRequest) {
           const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert({
-              mp_payment_id: dataId,
               payment_status: 'completed',
               total_amount: paymentData.transaction_amount,
               mp_application_fee: (paymentData as any).marketplace_fee || (paymentData as any).fee_details?.find((f: any) => f.type === 'application_fee')?.amount || 0,

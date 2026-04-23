@@ -165,7 +165,18 @@ export async function confirmReturnAndRefund(token: string) {
 
     if (itemUpdateErr) throw itemUpdateErr;
 
-    // 3. Regresar producto a inventario (Disponible)
+    // 3. Regresar producto a inventario (Disponible) y REVERTIR saldo del vendedor
+    const { error: rpcErr } = await supabaseAdmin.rpc('revert_escrow_funds', {
+      target_seller_id: item.seller_id,
+      payout_to_revert: item.payout_amount,
+      ref_order_item_id: itemId,
+      tx_description: `Devolución: Prenda retornada y reembolso procesado (${item.products.title})`
+    });
+
+    if (rpcErr) {
+      console.error("[Escrow] Error revert_escrow_funds en devolución:", rpcErr.message);
+    }
+
     const { error: productUpdateErr } = await supabaseAdmin
       .from('products')
       .update({ 
@@ -177,7 +188,7 @@ export async function confirmReturnAndRefund(token: string) {
       .eq('id', item.product_id);
 
     if (productUpdateErr) {
-      console.warn("No se pudo actualizar el estado del producto, pero el reembolso fue procesado.", productUpdateErr);
+      console.warn("No se pudo actualizar el estado del producto, pero el reembolso y reversión fueron procesados.", productUpdateErr);
     }
 
     // 4. Sincronizar estado de la Orden Global
