@@ -79,8 +79,8 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
                 )}
               </button>
               
-              <Link href="/" className="inline-block mt-6 text-xs text-muted hover:text-primary transition-colors uppercase tracking-widest">
-                Volver a la tienda
+              <Link href="/search" className="inline-block mt-6 text-xs text-muted hover:text-primary transition-colors uppercase tracking-widest">
+                Volver al catálogo
               </Link>
             </div>
           )}

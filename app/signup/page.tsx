@@ -15,33 +15,8 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  // Obtener datos de MP de la URL (después del callback)
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const mp_user_id = searchParams?.get('mp_user_id');
-  const mp_access_token = searchParams?.get('mp_access_token');
-  const mp_public_key = searchParams?.get('mp_public_key');
-  const isLinked = !!mp_user_id;
-
-  const handleLinkMP = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/auth/mercadopago/url');
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    } catch (_err) {
-      setError('Error al conectar con Mercado Pago');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLinked) {
-      setError('Debes vincular tu cuenta de Mercado Pago primero.');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
@@ -52,10 +27,7 @@ export default function SignupPage() {
         body: JSON.stringify({ 
           email, 
           password, 
-          name,
-          mp_user_id,
-          mp_access_token,
-          mp_public_key
+          name
         }),
       });
 
@@ -113,78 +85,52 @@ export default function SignupPage() {
               </div>
             )}
 
-            {!isLinked ? (
-              <div className="space-y-6">
-                <div className="p-6 bg-accent/5 border border-accent/20 rounded-2xl text-center">
-                  <p className="text-sm font-medium text-primary mb-4">Para ser vendedor, es indispensable vincular tu cuenta de Mercado Pago.</p>
-                  <p className="text-[10px] text-muted mb-6 uppercase tracking-widest">¿No tienes cuenta? Se te pedirá crear una en el siguiente paso.</p>
-                  <button 
-                    onClick={handleLinkMP}
-                    className="w-full py-4 bg-[#009EE3] text-white rounded-full text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:brightness-110 transition-all"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M16 32c8.837 0 16-7.163 16-16S24.837 0 16 0 0 7.163 0 16s7.163 16 16 16z" fill="#009EE3"/><path d="M11 21.5l5.5-5.5 5.5 5.5V10.5L16.5 16l-5.5-5.5v11z" fill="#fff"/></svg>
-                    Vincular con Mercado Pago
-                  </button>
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Nombre Completo</label>
+                <input 
+                  required
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
+                  placeholder="Tu nombre"
+                />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-2xl mb-6">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest">Cuenta Vinculada</p>
-                    <p className="text-xs text-green-600">Mercado Pago ID: {mp_user_id}</p>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Nombre Completo</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
-                    placeholder="Tu nombre"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Email de Acceso</label>
+                <input 
+                  required
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
+                  placeholder="tu@email.com"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Email de Acceso</label>
-                  <input 
-                    required
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
-                    placeholder="tu@email.com"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Contraseña Segura</label>
+                <input 
+                  required
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
+                  placeholder="••••••••"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Contraseña Segura</label>
-                  <input 
-                    required
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <button 
-                  disabled={isLoading}
-                  type="submit"
-                  className="w-full py-5 bg-primary text-cream rounded-full text-[11px] font-bold uppercase tracking-[0.3em] overflow-hidden relative group"
-                >
-                  <span className="relative z-10">{isLoading ? 'Procesando...' : 'Completar Registro'}</span>
-                  <div className="absolute inset-0 bg-accent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                </button>
-              </form>
-            )}
+              <button 
+                disabled={isLoading}
+                type="submit"
+                className="w-full py-5 bg-primary text-cream rounded-full text-[11px] font-bold uppercase tracking-[0.3em] overflow-hidden relative group"
+              >
+                <span className="relative z-10">{isLoading ? 'Procesando...' : 'Completar Registro'}</span>
+                <div className="absolute inset-0 bg-accent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              </button>
+            </form>
 
             <div className="mt-8 text-center">
               <p className="text-xs text-muted font-medium">

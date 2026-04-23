@@ -5,7 +5,6 @@ import { ProfileInventory } from "@/components/profile/ProfileInventory";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
-import { MPConnectButton } from "@/components/profile/MPConnectButton";
 import { WalletHistory } from "@/components/profile/WalletHistory";
 import { Suspense } from 'react';
 import Link from 'next/link';
@@ -41,8 +40,6 @@ export default async function ProfilePage() {
     console.error("[Profile] Error fetching user balances:", userErr);
   }
 
-  // En modelo centralizado todos están conectados a través de la cuenta maestra
-  const isMPConnected = true;
   const balancePending = userData?.balance_pending || 0;
   const balanceAvailable = userData?.balance_available || 0;
 
@@ -107,9 +104,7 @@ export default async function ProfilePage() {
               )}
               <Link href="/dashboard/credits" className="px-6 py-2 border border-accent text-accent rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-accent/5 transition-all">Recargar Créditos IA</Link>
               
-              <Suspense fallback={<div className="h-10 w-40 bg-sand/20 animate-pulse rounded-full"></div>}>
-                <MPConnectButton isConnected={isMPConnected} />
-              </Suspense>
+
             </div>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-8 pt-6 border-t border-sand/50 mt-6">

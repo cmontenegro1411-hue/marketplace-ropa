@@ -16,21 +16,7 @@ export async function createListing(formData: any) {
       return { success: false, error: "No autorizado. Inicie sesión." };
     }
 
-    // Validar conexión obligatoria a Mercado Pago
-    const { data: userMP } = await supabase
-      .from('users')
-      .select('mp_access_token')
-      .eq('id', session.user.id)
-      .single();
 
-    const isBypassEnabled = process.env.ALLOW_DEBUG_BYPASS === 'true' || process.env.NEXT_PUBLIC_ALLOW_DEBUG_BYPASS === 'true';
-
-    if (!userMP?.mp_access_token && !isBypassEnabled) {
-      return { 
-        success: false, 
-        error: "Debes vincular tu cuenta de Mercado Pago en tu perfil antes de publicar prendas para poder recibir tus pagos." 
-      };
-    }
 
     const { data, error } = await supabase
       .from('products')
@@ -263,10 +249,6 @@ export async function completePurchase(productIds: string[], formData: any) {
                   Tus fondos se liberarán automáticamente cuando el comprador confirme la recepción conforme.
                 </p>
                 
-                <div style="text-align: center; margin-top: 30px;">
-                  <a href="${process.env.NEXT_PUBLIC_SITE_URL}/profile" style="background: #2F3C2C; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver mi Closet</a>
-                </div>
-
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
                 <p style="font-size: 11px; color: #999; text-align: center;">Este es un mensaje automático de Moda Circular Luxury.</p>
               </div>
@@ -377,25 +359,12 @@ export async function completePurchase(productIds: string[], formData: any) {
         itemsWithTokens = products!.map(p => ({ ...p, token: '' }));
       }
 
-      const allProductsList = itemsWithTokens.map(p => `
+      const allProductsList = products!.map(p => `
         <li style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #D4A373; background: #fff; border-radius: 8px;">
           <strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}<br/>
-          ${p.token ? `
-          <div style="margin-top: 12px; display: flex; gap: 10px;">
-            <div style="display: inline-block; vertical-align: top; width: 45%;">
-              <a href="${siteUrl}/order/confirm/${p.token}" 
-                 style="display: inline-block; background: #2F3C2C; color: white; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmar Recibido</a>
-              <p style="margin: 5px 0 0 0; font-size: 9px; color: #666; line-height: 1.2;">Usa esta opción si ya tienes tu prenda y todo está perfecto. Libera el pago al vendedor.</p>
-            </div>
-            <div style="display: inline-block; vertical-align: top; width: 45%; margin-left: 5%;">
-              <a href="${siteUrl}/order/refund-request/${p.token}" 
-                 style="display: inline-block; font-size: 11px; background: #fff; color: #cc3333; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-weight: bold; text-transform: uppercase; border: 1px solid #cc3333;">
-                 ❌ Solicitar Devolución
-              </a>
-              <p style="margin: 5px 0 0 0; font-size: 10px; color: #cc3333; line-height: 1.2;">¿Algún problema? Haz clic para bloquear el pago e iniciar la devolución.</p>
-            </div>
-          </div>
-          ` : '<p style="font-size: 11px; color: #666; margin-top: 8px;">Para gestionar esta compra, visita tu perfil en la plataforma.</p>'}
+          <p style="font-size: 11px; color: #666; margin-top: 8px;">
+            Te enviaremos los enlaces para confirmar la recepción una vez que el vendedor marque el producto como enviado.
+          </p>
         </li>
       `).join('');
 
@@ -567,23 +536,69 @@ export async function markAsShipped(productId: string, trackingNumber?: string) 
     // 3. Enviar Correo al Comprador (Fricción Cero)
     if (product.buyer_email) {
       const { sendEmail } = await import('@/lib/brevo');
+      const { generateConfirmToken } = await import('@/lib/order-tokens');
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      const confirmLink = `${siteUrl}/checkout/confirm?t=${conformityToken}&p=${productId}`;
       
+      // Obtener el order_item para generar el token correcto
+      const { data: orderItem } = await supabaseAdmin
+        .from('order_items')
+        .select('id, order_id')
+        .eq('product_id', productId)
+        .eq('status', 'pending')
+        .single();
+
+      const token = orderItem ? generateConfirmToken(orderItem.id, orderItem.order_id) : '';
+
       await sendEmail({
         to: [{ email: product.buyer_email, name: product.buyer_name || 'Comprador' }],
         subject: `¡Tu pedido ya fue enviado! ${product.title}`,
         htmlContent: `
-          <div style="font-family: serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0dcd0; border-radius: 20px;">
-            <h1 style="color: #4a5d4e; text-align: center;">¡Buenas noticias!</h1>
+          <div style="font-family: Arial, sans-serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0dcd0; border-radius: 20px;">
+            <h1 style="color: #2F3C2C; text-align: center; border-bottom: 1px solid #F4F1EB; padding-bottom: 15px;">¡Tu pedido está en camino!</h1>
             <p>Hola <strong>${product.buyer_name || 'Comprador'}</strong>,</p>
-            <p>Tu prenda <strong>${product.title}</strong> de la marca <strong>${product.brand || 'Moda Circular'}</strong> ha sido enviada por el vendedor.</p>
-            ${trackingNumber ? `<p style="background: #fdfaf6; padding: 10px; border-radius: 10px;">📦 <strong>Número de rastreo:</strong> ${trackingNumber}</p>` : ''}
-            <div style="text-align: center; margin: 30px 0;">
-              <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Cuando recibas el producto y verifiques que todo está correcto, por favor confírmalo haciendo clic abajo:</p>
-              <a href="${confirmLink}" style="background-color: #4a5d4e; color: #fdfaf6; padding: 15px 30px; text-decoration: none; border-radius: 30px; font-weight: bold; display: inline-block;">CONFIRMAR RECEPCIÓN CONFORME</a>
+            <p>Grandes noticias: tu prenda <strong>${product.brand || ''} ${product.title}</strong> ha sido enviada por el vendedor.</p>
+            
+            ${trackingNumber ? `
+            <div style="background: #F9F7F2; padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid #D4A373;">
+              <p style="margin: 0; font-weight: bold; color: #D4A373;">📦 Número de rastreo:</p>
+              <p style="margin: 5px 0 0 0; font-size: 18px; font-family: monospace;">${trackingNumber}</p>
             </div>
-            <p style="font-size: 11px; color: #999; text-align: center;">Si tienes algún inconveniente, contáctanos respondiendo a este correo.</p>
+            ` : ''}
+
+            <div style="margin: 30px 0; padding: 20px; background: #fff; border: 1px solid #eee; border-radius: 15px;">
+              <p style="font-size: 14px; color: #666; margin-bottom: 20px; text-align: center;">
+                Cuando recibas el producto y verifiques que todo está conforme, utiliza los siguientes botones para gestionar tu compra:
+              </p>
+              
+              ${token ? `
+              <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <div style="text-align: center; width: 100%;">
+                  <a href="${siteUrl}/order/confirm/${token}" 
+                     style="display: inline-block; background: #2F3C2C; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; width: 200px;">
+                     Confirmar Recibido
+                  </a>
+                  <p style="margin: 8px 0 0 0; font-size: 11px; color: #666;">Libera el pago al vendedor inmediatamente.</p>
+                </div>
+
+                <div style="text-align: center; width: 100%; margin-top: 15px;">
+                  <a href="${siteUrl}/order/refund-request/${token}" 
+                     style="display: inline-block; color: #cc3333; font-weight: bold; text-decoration: underline; font-size: 13px;">
+                     ¿Algún problema? Solicitar Devolución
+                  </a>
+                  <p style="margin: 5px 0 0 0; font-size: 10px; color: #cc3333;">Bloquea el pago si la prenda no es lo que esperabas.</p>
+                </div>
+              </div>
+              ` : `
+              <p style="text-align: center; font-size: 12px; color: #666;">
+                Para gestionar tu compra, ingresa a tu perfil en la plataforma.
+              </p>
+              `}
+            </div>
+
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top: 30px;">
+              Gracias por elegir una moda más sostenible.<br/>
+              <strong>Equipo de Moda Circular Luxury</strong>
+            </p>
           </div>
         `
       });

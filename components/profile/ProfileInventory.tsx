@@ -6,7 +6,7 @@ import { EditListingLink } from "@/components/product/EditListingLink";
 import { DeleteListingButton } from "@/components/product/DeleteListingButton";
 import { MarkAvailableButton } from "@/components/product/MarkAvailableButton";
 import { ConfirmSaleButton } from "@/components/product/ConfirmSaleButton";
-import { MarkAsShippedButton } from "@/components/product/MarkAsShippedButton";
+import { MarkAsShippedCheckbox } from "@/components/product/MarkAsShippedCheckbox";
 import Link from 'next/link';
 
 interface ProfileInventoryProps {
@@ -89,7 +89,7 @@ export function ProfileInventory({ products }: ProfileInventoryProps) {
                {/* Reservado: vendedor puede marcar como enviado o revertir */}
                {product.status === 'reserved' && (
                  <>
-                   <MarkAsShippedButton productId={product.id} title={product.title} />
+                   <MarkAsShippedCheckbox productId={product.id} title={product.title} />
                    <MarkAvailableButton productId={product.id} title={product.title} />
                  </>
                )}
@@ -97,6 +97,7 @@ export function ProfileInventory({ products }: ProfileInventoryProps) {
                {/* Enviado: vendedor puede confirmar venta (tras conformidad del comprador) */}
                {product.status === 'shipped' && (
                  <>
+                   <MarkAsShippedCheckbox productId={product.id} title={product.title} isShipped />
                    <ConfirmSaleButton productId={product.id} title={product.title} />
                    <MarkAvailableButton productId={product.id} title={product.title} />
                  </>
@@ -106,6 +107,7 @@ export function ProfileInventory({ products }: ProfileInventoryProps) {
           </div>
         ))}
       </div>
+
 
       {filteredProducts.length === 0 && activeTab !== 'active' && activeTab !== 'all' && (
         <div className="py-20 text-center bg-white/50 rounded-3xl border border-dashed border-sand">

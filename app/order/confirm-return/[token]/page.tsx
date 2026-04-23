@@ -80,8 +80,8 @@ export default function ConfirmReturnPage({ params }: { params: Promise<{ token:
                 )}
               </button>
               
-              <Link href="/profile" className="inline-block mt-6 text-xs text-muted hover:text-primary transition-colors uppercase tracking-widest">
-                Volver a mi panel
+              <Link href="/" className="inline-block mt-6 text-xs text-muted hover:text-primary transition-colors uppercase tracking-widest">
+                Ir al Inicio
               </Link>
             </div>
           )}

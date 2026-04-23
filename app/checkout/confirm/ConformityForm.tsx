@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { confirmConformityPublic } from "@/app/actions/product-actions";
 
 interface ConformityFormProps {
@@ -41,12 +42,12 @@ export function ConformityForm({ productId, token }: ConformityFormProps) {
         </div>
         
         <div className="space-y-4">
-          <a 
+          <Link 
             href="/" 
             className="inline-block px-10 py-4 bg-primary text-cream rounded-full font-bold uppercase text-xs tracking-widest shadow-lg hover:bg-primary/90 transition-all"
           >
             Volver al Inicio
-          </a>
+          </Link>
           <p className="text-muted text-[10px] uppercase tracking-widest font-bold block">
             Puedes cerrar esta pestaña de forma segura
           </p>

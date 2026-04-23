@@ -12,17 +12,11 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name, mp_user_id, mp_access_token, mp_public_key } = await req.json();
-    console.log('[SIGNUP] Intentando registro con MP:', { email, mp_user_id });
+    const { email, password, name } = await req.json();
+    console.log('[SIGNUP] Intentando registro:', { email });
 
     if (!email || !password || !name) {
       return NextResponse.json({ message: 'Todos los campos son requeridos' }, { status: 400 });
-    }
-
-    if (!mp_user_id) {
-      return NextResponse.json({ 
-        message: 'Es indispensable vincular una cuenta de Mercado Pago para registrarse como vendedor.' 
-      }, { status: 400 });
     }
 
     // 1. Validar si el correo ya existe en `users`
@@ -46,10 +40,7 @@ export async function POST(req: Request) {
           email, 
           password_hash: hashedPassword, 
           name, 
-          role: 'seller',
-          mp_user_id,
-          mp_access_token,
-          mp_public_key
+          role: 'seller'
         }
       ])
       .select()

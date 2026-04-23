@@ -137,22 +137,13 @@ export async function POST(req: NextRequest) {
                 itemsWithTokens.push({ ...p, token });
               }
 
-              const itemsHtml = itemsWithTokens.map(p => {
+              const itemsHtml = fullProducts.map(p => {
                 return `
                   <li style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #D4A373; background: #fff; border-radius: 8px;">
                     <strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}<br/>
-                    <div style="margin-top: 12px; display: flex; gap: 10px;">
-                      <div style="display: inline-block; vertical-align: top; width: 45%;">
-                        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/confirm/${p.token}" 
-                           style="display: inline-block; background: #2F3C2C; color: white; padding: 8px 15px; text-decoration: none; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;">Confirmar Recibido</a>
-                        <p style="margin: 5px 0 0 0; font-size: 9px; color: #666; line-height: 1.2;">Usa esta opción si ya tienes tu prenda y todo está perfecto. Libera el pago al vendedor.</p>
-                      </div>
-                      <div style="display: inline-block; vertical-align: top; width: 45%; margin-left: 5%;">
-                        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/order/refund-request/${p.token}" 
-                           style="display: inline-block; color: #cc3333; font-size: 11px; text-decoration: underline; font-weight: bold; text-transform: uppercase;">Solicitar Devolución</a>
-                        <p style="margin: 5px 0 0 0; font-size: 9px; color: #cc3333; line-height: 1.2;">¿El producto no es lo que esperabas? Bloquea el pago aquí para gestionar la devolución.</p>
-                      </div>
-                    </div>
+                    <p style="font-size: 11px; color: #666; margin-top: 8px;">
+                      Te enviaremos los enlaces para confirmar la recepción una vez que el vendedor marque el producto como enviado.
+                    </p>
                   </li>
                 `;
               }).join('');
@@ -214,9 +205,6 @@ export async function POST(req: NextRequest) {
                         <li>Realiza el envío al comprador: <strong>${buyerName}</strong> (${buyerEmail || 'Ver en panel'}).</li>
                         <li>Ingresa a tu <strong>Perfil > Mi Inventario</strong> y marca la prenda como <strong>"Enviada"</strong> para notificar al comprador y agilizar la liberación de tus fondos.</li>
                       </ol>
-                      <div style="text-align: center; margin-top: 30px;">
-                        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/profile" style="background-color: #4a5d4e; color: #fdfaf6; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: bold;">IR A MI INVENTARIO</a>
-                      </div>
                     </div>
                   `
                 }).catch(e => console.error(`[Webhook Email Seller ${sellerId} Error]:`, e));

@@ -92,7 +92,7 @@ export default async function AdminSellersPage() {
 
               {(!sellers || sellers.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center text-muted italic">
+                  <td colSpan={6} className="px-8 py-20 text-center text-muted italic">
                     No se encontraron vendedores registrados.
                   </td>
                 </tr>
