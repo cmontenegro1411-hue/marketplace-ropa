@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
+export const fetchCache = 'force-no-store';
 export default async function AdminSellersPage() {
   // 1. Obtener vendedores con conteo de productos
   // Nota: En Supabase, para obtener el count de una relación usamos .select('*, products(count)')
