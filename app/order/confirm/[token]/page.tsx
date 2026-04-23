@@ -2,18 +2,52 @@
 
 import { useState, use } from 'react';
 import { CheckCircle2, Package, ShieldCheck, AlertCircle, Loader2, ArrowRight, Home } from 'lucide-react';
-import { confirmItemReception } from '@/app/actions/order-actions';
+import { confirmItemReception, getOrderItemStatus } from '@/app/actions/order-actions';
+import { useEffect } from 'react';
 import Link from 'next/link';
 
 export default function ConfirmReceptionPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'success' | 'error'>('ready');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'success' | 'error'>('loading');
+  const [product, setProduct] = useState<{ title: string; brand: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
+
+  const checkStatus = async () => {
+    setStatus('loading');
+    try {
+      const result = await getOrderItemStatus(token);
+      if (result.success) {
+        if (result.product) setProduct(result.product);
+        
+        if (result.status === 'completed') {
+          setStatus('success');
+        } else if (result.status === 'pending') {
+          setStatus('ready');
+        } else {
+          setStatus('error');
+          setErrorMessage(`Este pedido no puede ser confirmado porque su estado actual es: ${result.status}`);
+        }
+      } else {
+        setStatus('error');
+        setErrorMessage(result.error || 'Enlace inválido.');
+      }
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage('Error al verificar el estado del pedido.');
+    } finally {
+      setHasCheckedStatus(true);
+    }
+  };
+
+  useEffect(() => {
+    checkStatus();
+  }, [token]);
 
   const handleConfirm = async () => {
+    if (isProcessing) return;
     setIsProcessing(true);
-    setStatus('loading');
     
     try {
       const result = await confirmItemReception(token);
@@ -46,9 +80,17 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
                 <Package className="w-10 h-10 text-accent" />
               </div>
               
-              <h1 className="text-3xl font-serif text-primary mb-3">Recepción de Prenda</h1>
+              <h1 className="text-3xl font-serif text-primary mb-3">Confirmar Recepción</h1>
+              
+              {product && (
+                <div className="mb-6 px-4 py-3 bg-primary/5 rounded-2xl inline-block border border-primary/10">
+                  <p className="text-primary font-bold text-sm">{product.brand}</p>
+                  <p className="text-muted text-xs italic">{product.title}</p>
+                </div>
+              )}
+
               <p className="text-muted text-sm leading-relaxed mb-8 px-4">
-                Estás a punto de confirmar que recibiste tu prenda correctamente. Al hacerlo, liberaremos los fondos al vendedor de forma inmediata.
+                ¿Has recibido tu prenda correctamente? Al confirmar, liberaremos el pago al vendedor.
               </p>
 
               <div className="bg-sand/20 p-4 rounded-3xl border border-sand mb-8 flex items-start gap-3 text-left">
@@ -56,7 +98,7 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-accent mb-1">Protección al Comprador</p>
                   <p className="text-[10px] text-muted leading-tight">
-                    Recuerda revisar el estado de la prenda antes de confirmar. Una vez aceptada, el pago ya no podrá ser retenido por la plataforma.
+                    Recuerda revisar el estado de la prenda antes de confirmar. Una vez aceptada, el pago ya no podrá ser retenido.
                   </p>
                 </div>
               </div>
@@ -86,9 +128,9 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
           )}
 
           {status === 'loading' && (
-            <div className="py-20 flex flex-col items-center justify-center animate-pulse">
+            <div className="py-20 flex flex-col items-center justify-center">
               <div className="w-16 h-16 border-4 border-accent/20 border-t-accent rounded-full animate-spin mb-6" />
-              <p className="text-primary font-serif italic text-xl">Validando recepción...</p>
+              <p className="text-primary font-serif italic text-xl">Validando estado...</p>
             </div>
           )}
 
@@ -99,8 +141,16 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
               </div>
               
               <h2 className="text-3xl font-serif text-primary mb-3">¡Excelente!</h2>
+              
+              {product && (
+                <p className="text-primary font-medium text-sm mb-4">
+                  Has confirmado la recepción de: <br/>
+                  <span className="font-bold">{product.brand} {product.title}</span>
+                </p>
+              )}
+
               <p className="text-muted text-sm leading-relaxed mb-10 px-4">
-                La recepción ha sido confirmada. El vendedor recibirá sus fondos pronto y has contribuido a cerrar el ciclo de esta prenda.
+                La recepción ha sido confirmada. El vendedor recibirá sus fondos pronto. ¡Gracias por circular moda!
               </p>
 
               <div className="space-y-4">
@@ -127,10 +177,10 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
               </p>
 
               <button
-                onClick={() => setStatus('ready')}
-                className="w-full py-4 bg-primary text-cream rounded-full text-sm font-bold uppercase tracking-widest hover:bg-primary/90"
+                onClick={checkStatus}
+                className="w-full py-4 bg-primary text-cream rounded-full text-sm font-bold uppercase tracking-widest hover:bg-primary/90 shadow-lg"
               >
-                Intentar de nuevo
+                Verificar estado actual
               </button>
               
               <Link 

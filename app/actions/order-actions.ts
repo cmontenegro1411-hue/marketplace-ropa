@@ -56,6 +56,36 @@ export async function confirmItemReception(token: string) {
 }
 
 /**
+ * Verifica el estado de un ítem por su token.
+ */
+export async function getOrderItemStatus(token: string) {
+  try {
+    const decoded = verifyConfirmToken(token);
+    if (!decoded) return { success: false, error: "Token inválido o expirado." };
+
+    const { itemId } = decoded;
+    const { data: item, error } = await supabaseAdmin
+      .from('order_items')
+      .select('status, products(title, brand)')
+      .eq('id', itemId)
+      .single();
+
+    if (error || !item) return { success: false, error: "No se encontró el pedido." };
+
+    return { 
+      success: true, 
+      status: item.status,
+      product: {
+        title: (item.products as any).title,
+        brand: (item.products as any).brand
+      }
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Registra una disputa por parte del comprador.
  * Congela los fondos y notifica a ambas partes.
  */

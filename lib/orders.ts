@@ -21,12 +21,16 @@ export async function processEscrowRelease(itemId: string) {
     }
 
     // Solo procesar si está pendiente y no ha sido liberado
+    if (item.status === 'completed') {
+      return { success: true }; // Ya fue procesado exitosamente
+    }
+
     if (item.status !== 'pending') {
       return { success: false, error: `El ítem ${itemId} no está en estado 'pending' (Estado actual: ${item.status}).` };
     }
     
     if (item.payout_released) {
-      return { success: false, error: `Los fondos del ítem ${itemId} ya fueron liberados anteriormente.` };
+      return { success: true }; // Ya fue liberado anteriormente
     }
 
     // El payout_amount debería estar pre-calculado en la creación de la orden (Precio - Comisiones)
@@ -39,17 +43,34 @@ export async function processEscrowRelease(itemId: string) {
 
     // 2. Actualizar estado del ítem a 'completed'
     // Esto previene doble ejecución si el RPC tardara
-    const { error: updateErr } = await supabaseAdmin
+    const { error: updateErr, count } = await supabaseAdmin
       .from('order_items')
       .update({ 
         status: 'completed', 
         received_at: new Date().toISOString(),
         payout_released: true 
       })
-      .eq('id', itemId);
+      .eq('id', itemId)
+      .eq('status', 'pending');
 
     if (updateErr) {
       throw new Error(`Error al actualizar estado del ítem: ${updateErr.message}`);
+    }
+
+    if (count === 0) {
+      // Si count es 0 significa que no se cumplió la condición .eq('status', 'pending')
+      // Verificamos si es porque ya está completed
+      const { data: currentItem } = await supabaseAdmin
+        .from('order_items')
+        .select('status')
+        .eq('id', itemId)
+        .single();
+
+      if (currentItem?.status === 'completed') {
+        return { success: true }; // Ya estaba procesado, lo consideramos éxito
+      }
+      
+      return { success: false, error: "El pedido ya ha sido procesado o no está pendiente." };
     }
 
     // 3. Ejecutar RPC para mover los fondos en la tabla 'users'

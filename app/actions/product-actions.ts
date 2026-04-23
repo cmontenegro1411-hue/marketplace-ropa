@@ -518,6 +518,10 @@ export async function markAsShipped(productId: string, trackingNumber?: string) 
       return { success: false, error: "No tienes permiso para marcar esta prenda como enviada." };
     }
 
+    if (product.status === 'shipped') {
+      return { success: false, error: "Esta prenda ya ha sido marcada como enviada anteriormente." };
+    }
+
     // 2. Generar/Obtener Token (si no existe) y actualizar estado
     const conformityToken = product.conformity_token || crypto.randomUUID();
     
