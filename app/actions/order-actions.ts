@@ -26,7 +26,26 @@ export async function confirmItemReception(token: string) {
       return result;
     }
 
+    // Obtener el product_id para actualizar el estado del producto
+    const { data: orderItem } = await supabaseAdmin
+      .from('order_items')
+      .select('product_id')
+      .eq('id', itemId)
+      .single();
+
+    if (orderItem?.product_id) {
+      await supabaseAdmin
+        .from('products')
+        .update({ 
+          buyer_conformity: true,
+          status: 'sold' 
+        })
+        .eq('id', orderItem.product_id);
+    }
+
     revalidatePath(`/order/confirm/${token}`);
+    revalidatePath('/');
+    revalidatePath('/search');
     return { success: true };
   } catch (error: any) {
     console.error("confirmItemReception Error:", error);
