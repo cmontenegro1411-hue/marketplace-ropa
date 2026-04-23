@@ -31,7 +31,7 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
         }
       } else {
         setStatus('error');
-        setErrorMessage(result.error || 'Enlace inválido.');
+        setErrorMessage(result.error || 'Enlace inválido o expirado.');
       }
     } catch (err) {
       setStatus('error');
@@ -46,7 +46,7 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
   }, [token]);
 
   const handleConfirm = async () => {
-    if (isProcessing) return;
+    if (isProcessing || status !== 'ready') return;
     setIsProcessing(true);
     
     try {
@@ -55,8 +55,13 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
       if (result.success) {
         setStatus('success');
       } else {
-        setStatus('error');
-        setErrorMessage(result.error || 'No pudimos procesar la confirmación.');
+        // Si el error es porque ya estaba completado, lo tratamos como éxito
+        if (result.error?.includes('ya ha sido procesado') || result.error?.includes('completed')) {
+          setStatus('success');
+        } else {
+          setStatus('error');
+          setErrorMessage(result.error || 'No pudimos procesar la confirmación.');
+        }
       }
     } catch (_err) {
       setStatus('error');
@@ -144,13 +149,13 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
               
               {product && (
                 <p className="text-primary font-medium text-sm mb-4">
-                  Has confirmado la recepción de: <br/>
+                  Confirmación de: <br/>
                   <span className="font-bold">{product.brand} {product.title}</span>
                 </p>
               )}
 
               <p className="text-muted text-sm leading-relaxed mb-10 px-4">
-                La recepción ha sido confirmada. El vendedor recibirá sus fondos pronto. ¡Gracias por circular moda!
+                La recepción ha sido confirmada satisfactoriamente. El vendedor recibirá sus fondos pronto. ¡Gracias por circular moda!
               </p>
 
               <div className="space-y-4">
