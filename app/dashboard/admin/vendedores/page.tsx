@@ -14,11 +14,9 @@ export default async function AdminSellersPage() {
       email,
       whatsapp_number,
       created_at,
-      products!products_seller_id_fkey (count),
-      profiles (
-        balance_available,
-        balance_pending
-      )
+      balance_available,
+      balance_pending,
+      products!products_seller_id_fkey (count)
     `)
     .eq('role', 'seller')
     .order('created_at', { ascending: false });
@@ -49,8 +47,7 @@ export default async function AdminSellersPage() {
             </thead>
             <tbody className="divide-y divide-sand/20">
               {sellers?.map((seller: any) => {
-                const profile = Array.isArray(seller.profiles) ? seller.profiles[0] : seller.profiles;
-                const totalSales = (profile?.balance_available || 0) + (profile?.balance_pending || 0);
+                const totalSales = (seller.balance_available || 0) + (seller.balance_pending || 0);
                 
                 return (
                   <tr key={seller.id} className="hover:bg-slate-50/50 transition-colors group">
