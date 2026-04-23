@@ -30,14 +30,19 @@ export default async function ProfilePage() {
     .eq('seller_id', session.user.id)
     .order('created_at', { ascending: false });
 
-  // Obtener estado de Mercado Pago Connect y BALANCES
-  const { data: userData } = await supabaseAdmin
+  // Obtener BALANCES (Escrow centralizado)
+  const { data: userData, error: userErr } = await supabaseAdmin
     .from('users')
-    .select('mp_access_token, balance_pending, balance_available')
+    .select('balance_pending, balance_available')
     .eq('id', session.user.id)
     .single();
 
-  const isMPConnected = !!userData?.mp_access_token;
+  if (userErr) {
+    console.error("[Profile] Error fetching user balances:", userErr);
+  }
+
+  // En modelo centralizado todos están conectados a través de la cuenta maestra
+  const isMPConnected = true;
   const balancePending = userData?.balance_pending || 0;
   const balanceAvailable = userData?.balance_available || 0;
 
