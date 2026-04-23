@@ -45,7 +45,8 @@
 
 ### 3.2 Frontend (Next.js App Router)
 - **Caché:** Next.js es muy agresivo cacheando peticiones `fetch` (método que usa Supabase internamente). Cualquier página que muestre transacciones o saldos financieros (como el Dashboard o Perfil) debe usar `export const fetchCache = 'force-no-store'` en la raíz de la ruta para garantizar datos reales, o revalidaciones rigurosas (`revalidatePath`).
-- **UI:** Las tarjetas de producto muestran el listón de "Reservado" (full-overlay inclinado en el centro) cuando el estado es `reserved`, y cambian automáticamente al mismo formato pero con "Vendido" cuando es `sold`.
+- **UI de Billetera:** Las transacciones en el frontend deben agruparse por `order_item_id`. Aunque la BD tenga filas separadas para `capture` y `release`, la vista las fusiona mostrando un solo registro con columnas "Retenido" y "Liberado" para simplificar la información al vendedor.
+- **UI de Productos:** Las tarjetas de producto muestran el listón de "Reservado" (full-overlay inclinado en el centro) cuando el estado es `reserved`, y cambian automáticamente al mismo formato pero con "Vendido" cuando es `sold`.
 - **Enlaces de Email:** Siempre generar y decodificar los tokens de correo con `base64url` (no `base64` estándar) para evitar que caracteres inválidos como `+` o `/` rompan el link en los navegadores de los clientes de correo.
 
 ## 4. DICCIONARIO DE DATOS ESTRATÉGICOS
