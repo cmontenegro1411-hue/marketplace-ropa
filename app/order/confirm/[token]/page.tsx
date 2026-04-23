@@ -111,13 +111,6 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
                   <Home className="w-4 h-4" />
                   Ir al Inicio
                 </Link>
-                
-                <Link 
-                  href="/profile/orders"
-                  className="w-full py-4 bg-white text-primary border border-primary/20 rounded-full text-sm font-bold uppercase tracking-widest hover:bg-primary/5 transition-colors block"
-                >
-                  Ver mis Pedidos
-                </Link>
               </div>
             </div>
           )}
