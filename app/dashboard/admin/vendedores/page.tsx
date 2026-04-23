@@ -15,10 +15,9 @@ export default async function AdminSellersPage() {
       whatsapp_number,
       created_at,
       products!products_seller_id_fkey (count),
-      order_items!order_items_seller_id_fkey (
-        price, 
-        status,
-        order:orders(payment_status)
+      profiles (
+        balance_available,
+        balance_pending
       )
     `)
     .eq('role', 'seller')
@@ -50,8 +49,8 @@ export default async function AdminSellersPage() {
             </thead>
             <tbody className="divide-y divide-sand/20">
               {sellers?.map((seller: any) => {
-                const totalSales = seller.order_items?.reduce((sum: number, item: any) => 
-                  (item.order?.payment_status === 'completed') ? sum + (item.price || 0) : sum, 0) || 0;
+                const profile = Array.isArray(seller.profiles) ? seller.profiles[0] : seller.profiles;
+                const totalSales = (profile?.balance_available || 0) + (profile?.balance_pending || 0);
                 
                 return (
                   <tr key={seller.id} className="hover:bg-slate-50/50 transition-colors group">
