@@ -337,6 +337,12 @@ export async function completePurchase(productIds: string[], formData: any) {
        }
     }
 
+    revalidatePath('/');
+    revalidatePath('/search');
+    revalidatePath('/checkout/success');
+    revalidatePath('/profile');
+    revalidatePath('/dashboard/admin/vendedores');
+
     // 🟢 NOTIFICAR AL COMPRADOR POR CORREO
     if (formData.email && orderRecord) {
       // Obtener los IDs de los order_items recién creados para generar tokens por ítem

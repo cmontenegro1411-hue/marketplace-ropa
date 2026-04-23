@@ -46,6 +46,8 @@ export async function confirmItemReception(token: string) {
     revalidatePath(`/order/confirm/${token}`);
     revalidatePath('/');
     revalidatePath('/search');
+    revalidatePath('/profile');
+    revalidatePath('/dashboard/admin/vendedores');
     return { success: true };
   } catch (error: any) {
     console.error("confirmItemReception Error:", error);
