@@ -61,8 +61,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </button>
 
         {status === 'reserved' && (
-          <div className="absolute top-4 right-4 z-10 bg-accent text-white px-3 py-1 rounded-full shadow-lg pointer-events-none">
-            <span className="text-[9px] font-bold uppercase tracking-[0.3em]">Reservado</span>
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center pointer-events-none">
+            <div className="bg-accent text-white px-6 py-2 border-2 border-white/20 shadow-2xl rotate-6 scale-110">
+              <span className="text-xs font-bold uppercase tracking-[0.4em]">Reservado</span>
+            </div>
           </div>
         )}
 
