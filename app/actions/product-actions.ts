@@ -188,7 +188,7 @@ export async function completePurchase(productIds: string[], formData: any) {
     const { error } = await supabase
       .from('products')
       .update({ 
-        status: 'sold',
+        status: 'reserved',
         buyer_name: formData.name,
         buyer_phone: formData.buyer_phone,
         buyer_email: formData.email
@@ -340,13 +340,15 @@ export async function completePurchase(productIds: string[], formData: any) {
     // 🟢 NOTIFICAR AL COMPRADOR POR CORREO
     if (formData.email && orderRecord) {
       // Obtener los IDs de los order_items recién creados para generar tokens por ítem
-      const { data: savedItems } = await supabase
+      // IMPORTANTE: usar supabaseAdmin para evitar que RLS bloquee la lectura
+      const { data: savedItems } = await supabaseAdmin
         .from('order_items')
         .select('id, product_id')
         .eq('order_id', orderRecord.id);
 
       const itemsWithTokens = products!.map(p => {
         const orderItemId = savedItems?.find(si => si.product_id === p.id)?.id;
+        if (!orderItemId) console.warn(`[Token] No se encontró order_item para product_id=${p.id}`);
         const token = orderItemId ? generateConfirmToken(orderItemId, orderRecord.id) : '';
         return { ...p, token };
       });

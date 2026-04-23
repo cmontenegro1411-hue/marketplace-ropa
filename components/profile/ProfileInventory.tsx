@@ -86,17 +86,20 @@ export function ProfileInventory({ products }: ProfileInventoryProps) {
                <EditListingLink productId={product.id} />
                <DeleteListingButton productId={product.id} title={product.title} />
                
+               {/* Reservado: vendedor puede marcar como enviado o revertir */}
                {product.status === 'reserved' && (
                  <>
-                   <ConfirmSaleButton productId={product.id} title={product.title} />
+                   <MarkAsShippedButton productId={product.id} title={product.title} />
                    <MarkAvailableButton productId={product.id} title={product.title} />
                  </>
                )}
                
-               {product.status === 'sold' && !product.shipped_at && (
-                 <div className="absolute inset-x-4 bottom-16 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <MarkAsShippedButton productId={product.id} title={product.title} />
-                 </div>
+               {/* Enviado: vendedor puede confirmar venta (tras conformidad del comprador) */}
+               {product.status === 'shipped' && (
+                 <>
+                   <ConfirmSaleButton productId={product.id} title={product.title} />
+                   <MarkAvailableButton productId={product.id} title={product.title} />
+                 </>
                )}
                
             </div>
