@@ -72,7 +72,7 @@ export default async function AdminSellersPage() {
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Vendedor</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Contacto</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted text-center">Publicaciones</th>
-                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Total Ventas (GMV)</th>
+                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Ventas Efectivas</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">En Disputa</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted text-center">Estado</th>
               </tr>
@@ -105,13 +105,12 @@ export default async function AdminSellersPage() {
                   </td>
                   <td className="px-8 py-6">
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-primary">S/ {seller.totalVolume.toLocaleString()}</p>
-                      <div className="flex flex-col gap-0.5">
-                        <p className="text-[9px] text-[#008F6A] font-bold uppercase">S/ {seller.availableBalance.toLocaleString()} Disponible</p>
-                        {seller.pendingBalance > 0 && (
-                          <p className="text-[9px] text-amber-600 font-bold uppercase">S/ {seller.pendingBalance.toLocaleString()} en Escrow</p>
-                        )}
-                      </div>
+                      <p className="text-sm font-bold text-primary">S/ {seller.availableBalance.toLocaleString()}</p>
+                      {seller.pendingBalance > 0 && (
+                        <div className="flex flex-col gap-0.5">
+                          <p className="text-[9px] text-muted font-bold uppercase">S/ {seller.totalVolume.toLocaleString()} Total (inc. Escrow)</p>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-8 py-6">
