@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../lib/supabase-admin.js";
+import { processEscrowRelease } from "../lib/orders";
 
 /**
  * Script de automatización para liberar fondos de Escrow tras 72 horas de inactividad.
@@ -12,7 +13,7 @@ async function autoReleaseFunds() {
   // 1. Buscar order_items en estado 'pending' creados hace más de 72 horas
   const { data: items, error: fetchErr } = await supabaseAdmin
     .from('order_items')
-    .select('*, sellers(id, balance_available, balance_pending)')
+    .select('id')
     .eq('status', 'pending')
     .lt('created_at', seventyTwoHoursAgo);
 
@@ -30,28 +31,16 @@ async function autoReleaseFunds() {
 
   for (const item of items) {
     try {
-      const payoutAmount = item.payout_amount || (item.price * 0.85);
+      // Usamos la lógica centralizada para asegurar consistencia en auditoría y descripciones
+      const result = await processEscrowRelease(item.id);
 
-      // Liberar fondos en DB
-      const { error: rpcErr } = await supabaseAdmin.rpc('release_escrow_funds', {
-        seller_id: item.seller_id,
-        amount: payoutAmount
-      });
-
-      if (rpcErr) throw rpcErr;
-
-      // Actualizar estado del ítem
-      await supabaseAdmin
-        .from('order_items')
-        .update({ 
-          status: 'completed', 
-          payout_released: true 
-        })
-        .eq('id', item.id);
-
-      console.log(`✅ Fondos del ítem ${item.id} liberados automáticamente al vendedor ${item.seller_id}`);
+      if (result.success) {
+        console.log(`✅ Fondos del ítem ${item.id} liberados satisfactoriamente.`);
+      } else {
+        console.error(`❌ Error al liberar ítem ${item.id}:`, result.error);
+      }
     } catch (err) {
-      console.error(`❌ Error procesando ítem ${item.id}:`, err);
+      console.error(`❌ Error inesperado procesando ítem ${item.id}:`, err);
     }
   }
 

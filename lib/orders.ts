@@ -11,7 +11,7 @@ export async function processEscrowRelease(itemId: string) {
     // 1. Obtener detalles del ítem usando el cliente admin
     const { data: item, error: fetchErr } = await supabaseAdmin
       .from('order_items')
-      .select('id, seller_id, payout_amount, status, payout_released, price, products(title)')
+      .select('id, seller_id, payout_amount, status, payout_released, price, products(title, brand)')
       .eq('id', itemId)
       .single();
 
@@ -20,7 +20,11 @@ export async function processEscrowRelease(itemId: string) {
       return { success: false, error: `Ítem ${itemId} no encontrado.` };
     }
 
-    const productTitle = (item.products as any)?.title || 'Producto';
+    const productInfo = item.products as any;
+    let productTitle = productInfo?.title || 'Producto';
+    if (productInfo?.brand && !productTitle.toLowerCase().includes(productInfo.brand.toLowerCase())) {
+      productTitle = `${productInfo.brand} ${productTitle}`;
+    }
 
     // Solo procesar si está pendiente y no ha sido liberado
     if (item.status === 'completed') {

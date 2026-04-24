@@ -169,7 +169,7 @@ export async function confirmReturnAndRefund(token: string) {
 
     const { data: item, error: fetchErr } = await supabaseAdmin
       .from('order_items')
-      .select('*, orders(mp_payment_id), products(title)')
+      .select('*, orders(mp_payment_id), products(title, brand)')
       .eq('id', itemId)
       .single();
 
@@ -201,12 +201,18 @@ export async function confirmReturnAndRefund(token: string) {
 
     if (itemUpdateErr) throw itemUpdateErr;
 
+    const productInfo = item.products as any;
+    let productTitle = productInfo?.title || 'Producto';
+    if (productInfo?.brand && !productTitle.toLowerCase().includes(productInfo.brand.toLowerCase())) {
+      productTitle = `${productInfo.brand} ${productTitle}`;
+    }
+
     // 3. Regresar producto a inventario (Disponible) y REVERTIR saldo del vendedor
     const { error: rpcErr } = await supabaseAdmin.rpc('revert_escrow_funds', {
       target_seller_id: item.seller_id,
       payout_to_revert: item.payout_amount,
       ref_order_item_id: itemId,
-      tx_description: `Devolución: ${item.products.title}`
+      tx_description: `Devolución: ${productTitle}`
     });
 
     if (rpcErr) {
