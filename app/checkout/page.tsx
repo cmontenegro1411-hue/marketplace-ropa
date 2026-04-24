@@ -6,6 +6,7 @@ import { Navbar } from '@/components/ui/Navbar';
 import { useCart } from '@/context/CartContext';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { completePurchase } from '@/app/actions/product-actions';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 
@@ -16,7 +17,9 @@ if (process.env.NEXT_PUBLIC_MP_PUBLIC_KEY) {
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
   const { data: _session } = useSession();
+  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Procesando pago seguro...');
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +33,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
+    setLoadingMessage('Preparando pasarela de pago...');
     setError(null);
     try {
       // Nueva validación de email
@@ -73,11 +77,14 @@ export default function CheckoutPage() {
     }
 
     try {
+      setLoadingMessage('Simulando transacción segura...');
       const result = await completePurchase(cart.map(i => i.id), formData);
+      
       if (result.success) {
+        setLoadingMessage('¡Pago exitoso! Redirigiendo...');
         clearCart();
-        // Redirigir a la página de éxito oficial con parámetros simulados
-        window.location.href = `/checkout/success?payment_id=bypass_${Date.now()}&status=approved`;
+        // Soft navigation con router.push para evitar parpadeos
+        router.push(`/checkout/success?payment_id=bypass_${Date.now()}&status=approved`);
       } else {
         throw new Error(result.error || 'Error en Bypass');
       }
@@ -261,6 +268,27 @@ export default function CheckoutPage() {
           </div>
         </div>
       </Container>
+
+      {/* OVERLAY DE CARGA PREMIUM */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream/90 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="text-center space-y-6 max-w-xs animate-in zoom-in slide-in-from-bottom-4 duration-700">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-primary/10 border-t-accent rounded-full animate-spin mx-auto"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-serif font-bold text-primary">{loadingMessage}</h3>
+              <p className="text-[10px] text-muted uppercase tracking-[0.2em] font-bold">Seguridad Cifrada • Moda Circular</p>
+            </div>
+            <div className="pt-4">
+               <p className="text-[9px] text-muted italic">No cierres esta ventana mientras aseguramos tus prendas.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

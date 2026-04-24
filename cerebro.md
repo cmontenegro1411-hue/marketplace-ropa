@@ -2,7 +2,7 @@
 
 ## 0. METADATA Y ESTADO DEL SISTEMA
 
-- **Versión Actual:** 1.7.5
+- **Versión Actual:** 1.7.6
 - **Fase de Desarrollo:** Refinamiento de Billetera Virtual, Auditoría de Transacciones (Escrow Centralizado) y estabilización de UI.
 - **Directiva del Orquestador:** Este documento es la única fuente de verdad absoluta. Se prohíbe cualquier implementación que contradiga este flujo.
 
@@ -63,6 +63,7 @@
 
 ## 5. CHANGELOG
 
+- **[24-04-2026] - v1.7.6:** Mejora de UX en Checkout: Implementación de LoadingOverlay premium y soft navigation (`useRouter`) para eliminar parpadeos durante el procesamiento de pagos.
 - **[24-04-2026] - v1.7.5:** Optimización del Dashboard CRM Admin. Se ajustó el cálculo de "Ventas Realizadas" para excluir explícitamente órdenes reembolsadas (`payment_status = 'refunded'`). Se mejoró la visualización de estados en la actividad reciente (Pagado, Devuelto, En Disputa, En Tránsito) para mayor precisión operativa.
 - **[24-04-2026] - v1.7.4:** Implementación de lógica de reembolso híbrida. El sistema ahora detecta órdenes en modo "Bypass" (sin `mp_payment_id`) y permite completar el flujo de retorno y reversión de fondos interna (`revert_escrow_funds`) sin fallar por falta de integración con Mercado Pago. Esto estabiliza el entorno de pruebas y despliegues en Vercel para validaciones de fin de flujo.
 - **[23-04-2026] - v1.7.3:** Estabilización de notificaciones por correo en producción. Configuración de variables de entorno de Brevo en Vercel. Corrección de `NEXT_PUBLIC_SITE_URL` para enlaces funcionales de confirmación y devolución. Refactorización de `completePurchase` para mayor resiliencia ante errores de base de datos.
