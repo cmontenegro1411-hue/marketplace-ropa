@@ -9,6 +9,7 @@ export const revalidate = 0; // Datos siempre frescos
 
 export default async function AdminCRMPage() {
   // 1. Obtener métricas
+  // Solo contamos ventas completadas que NO han sido reembolsadas
   const { data: salesData } = await supabaseAdmin
     .from('orders')
     .select('total_amount')
@@ -28,9 +29,31 @@ export default async function AdminCRMPage() {
     .from('orders')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10); // Aumentamos un poco el límite para ver más actividad
 
   const totalSalesValue = salesData?.reduce((acc, curr) => acc + (curr.total_amount || 0), 0) || 0;
+
+  // Función auxiliar para labels de estado
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Pagado';
+      case 'refunded': return 'Devuelto';
+      case 'disputed': return 'En Disputa';
+      case 'pendiente': return 'Pendiente';
+      case 'processing': return 'En Tránsito';
+      default: return status;
+    }
+  };
+
+  const getStatusStyles = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-[#00E0A6]/10 text-[#008F6A]';
+      case 'refunded': return 'bg-red-50 text-red-500 border border-red-100';
+      case 'disputed': return 'bg-orange-50 text-orange-600 border border-orange-100';
+      case 'pendiente': return 'bg-slate-200 text-slate-500';
+      default: return 'bg-slate-100 text-slate-400';
+    }
+  };
 
   return (
     <div className="space-y-10">
@@ -47,7 +70,7 @@ export default async function AdminCRMPage() {
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Ventas Realizadas</span>
           </div>
           <div className="text-4xl font-serif font-bold text-primary">S/ {totalSalesValue.toLocaleString()}</div>
-          <p className="text-xs text-muted mt-2 font-medium">Ingresos brutos acumulados</p>
+          <p className="text-xs text-muted mt-2 font-medium">Ingresos netos (excluye devoluciones)</p>
         </div>
 
         <div className="bg-white p-8 rounded-[2rem] editorial-shadow border border-sand/50">
@@ -92,14 +115,8 @@ export default async function AdminCRMPage() {
                 <div>
                   <p className="text-sm font-bold text-accent">S/ {order.total_amount}</p>
                 </div>
-                <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
-                  order.payment_status === 'completed' 
-                    ? 'bg-[#00E0A6]/10 text-[#008F6A]' 
-                    : order.payment_status === 'refunded'
-                      ? 'bg-red-50 text-red-500 border border-red-100'
-                      : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {order.payment_status === 'completed' ? 'Pagado' : order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
+                <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${getStatusStyles(order.payment_status)}`}>
+                  {getStatusLabel(order.payment_status)}
                 </div>
               </div>
             </div>

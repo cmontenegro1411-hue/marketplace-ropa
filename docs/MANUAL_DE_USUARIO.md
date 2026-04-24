@@ -27,5 +27,13 @@ Los usuarios con rango de Administrador disfrutan de:
 - **Créditos IA Infinitos**: Uso libre del motor de descripciones automáticas.
 - **Acceso a Reportes**: Visualización de contactos de compradores para soporte.
 
+## 🔄 Devoluciones y Reembolsos
+
+La plataforma cuenta con un sistema de **Fideicomiso (Escrow)** para proteger tu dinero:
+1. **Retención de Fondos**: Al pagar, el dinero se mantiene seguro en la plataforma.
+2. **Plazo de 72 horas**: Tienes 72 horas desde que recibes el producto para confirmar tu conformidad.
+3. **Solicitud de Devolución**: Si el producto no coincide con la descripción, puedes solicitar una devolución desde el correo de confirmación.
+4. **Reembolso**: Una vez que el vendedor confirme que recibió la prenda de regreso, el dinero se reembolsará automáticamente a tu cuenta de Mercado Pago.
+
 ---
-*Última revisión: 16 de Abril, 2026*
+*Última revisión: 24 de Abril, 2026*

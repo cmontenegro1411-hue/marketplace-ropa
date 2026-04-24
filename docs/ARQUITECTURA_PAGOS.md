@@ -1,39 +1,40 @@
-# 💰 Arquitectura de Pagos (Visión vs Realidad Actual)
+# 💰 Arquitectura de Pagos (Escrow Centralizado)
 
-Este documento define la estructura de pagos de la plataforma. Ha sido actualizado para reflejar el pivot del modelo de negocio hacia la monetización de servicios de IA.
+Este documento define la estructura financiera de la plataforma, basada en un modelo de **Fideicomiso Centralizado (Escrow)**.
 
-## 🏛️ Estado Actual: Monetización de Eficiencia (SaaS)
+## 🏛️ Modelo de Negocio: Marketplace de Confianza
 
-Actualmente, la plataforma **no interviene en la transacción de dinero entre comprador y vendedor** para las prendas de vestir. Esto reduce la complejidad legal y operativa en la etapa de lanzamiento.
+A diferencia de modelos directos C2C, la plataforma actúa como intermediario financiero para garantizar la seguridad de ambas partes.
 
-### 1. Modelo C2C (Client to Client) Directo
-*   **Transacción**: El comprador contacta al vendedor vía WhatsApp (datos provistos en el checkout).
-*   **Pago**: Se realiza externamente (Efectivo, Yape, Plin, Transferencia) al momento de la entrega o coordinación.
-*   **Comisión**: 0% por venta de producto.
+### 1. Flujo de Fondos (Escrow)
+*   **Cuenta Maestra**: Todo el dinero de las compras entra a la cuenta maestra de Mercado Pago de la plataforma.
+*   **Billetera Virtual**: Se lleva un registro virtual de saldos para cada vendedor en la base de datos (Supabase).
+    *   `balance_pending`: Fondos retenidos mientras el comprador recibe el producto.
+    *   `balance_available`: Fondos liberados que el vendedor puede retirar.
+*   **Auditoría**: Cada movimiento genera un registro inmutable en `wallet_transactions`.
 
-### 2. Monetización vía IA (Créditos)
-La plataforma monetiza el valor agregado tecnológico:
-*   **Registro**: Gratis, incluye **2 créditos de IA** de regalo.
-*   **Recarga**: Los usuarios pueden comprar paquetes de créditos para automatizar sus anuncios:
-    *   5 Créditos: S/ 9.90
-    *   15 Créditos: S/ 24.90
-    *   50 Créditos: S/ 69.90
-*   **Procesamiento**: Mercado Pago (Checkout Pro) integrado en `/dashboard/credits`.
+### 2. Ciclo de Vida de la Venta
+1.  **Pago**: El comprador paga. La prenda pasa a `reserved`. Los fondos se suman al `balance_pending` del vendedor.
+2.  **Entrega**: El vendedor entrega el producto.
+3.  **Confirmación**: El comprador confirma recepción vía email. Los fondos pasan de `balance_pending` a `balance_available`.
+4.  **Devolución**: Si hay disputa, los fondos se mantienen en `balance_pending` hasta que el vendedor confirme el retorno de la prenda, momento en el cual se dispara el reembolso vía Mercado Pago.
 
----
-
-## 🚀 Visión Futura: Marketplace Escrow (Opcional)
-
-Si el volumen de ventas escala, se podría implementar un modelo de **Fideicomiso (Escrow)** para aumentar la confianza:
-
-### 1. Actores y Flujo Automatizado
-*   **Pasarela (Mercado Pago / Stripe Connect)**: Retiene el dinero hasta que el comprador confirme la recepción.
-*   **Split Payments**: Al liberar los fondos, la pasarela envía el 85% al vendedor y el 15% (comisión) a la plataforma automáticamente.
-
-### 2. Beneficios del Modelo Escrow
-*   Garantía de devolución si el producto no llega.
-*   Resolución de disputas integrada.
-*   Escalabilidad sin intervención manual.
+### 3. Monetización vía IA (Créditos)
+*   **Servicios de Valor Agregado**: La creación de anuncios (listings) mediante IA consume créditos.
+*   **Compra de Créditos**: Integrada mediante Mercado Pago Checkout Pro.
 
 ---
-*Documento actualizado por Antigravity AI - Estrategia de Lanzamiento Ágil.*
+
+## 🛠️ Detalles Técnicos de Implementación
+
+### Funciones de Base de Datos (RPC)
+Para garantizar la integridad, los saldos solo se modifican mediante funciones RPC atómicas:
+*   `capture_escrow_funds`: Registra el ingreso de dinero.
+*   `release_escrow_funds`: Libera el dinero tras la confirmación.
+*   `revert_escrow_funds`: Reubica los fondos en caso de devolución.
+
+### Seguridad y Bypass de Pruebas
+El sistema permite un modo **Bypass** para pruebas internas donde se omiten los pagos reales pero se simula todo el flujo de billetera virtual, permitiendo validaciones completas de extremo a extremo sin transacciones financieras reales.
+
+---
+*Documento actualizado por Antigravity AI - v1.7.4*
