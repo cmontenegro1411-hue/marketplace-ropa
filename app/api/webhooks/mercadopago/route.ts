@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
             .insert({
               payment_status: 'completed',
               total_amount: paymentData.transaction_amount,
+              mp_payment_id: dataId,
               mp_application_fee: (paymentData as any).marketplace_fee || (paymentData as any).fee_details?.find((f: any) => f.type === 'application_fee')?.amount || 0,
               buyer_email: paymentData.payer?.email,
               items: productIds

@@ -103,7 +103,8 @@ export async function disputeOrderItem(token: string) {
       .eq('id', itemId)
       .single();
 
-    if (fetchErr || !item) return { success: false, error: "Item no encontrado." };
+    if (fetchErr) return { success: false, error: `Error al buscar el ítem: ${fetchErr.message}` };
+    if (!item) return { success: false, error: "Ítem no encontrado." };
     if (item.status !== 'pending') return { success: false, error: "Ya existe una acción sobre este ítem." };
 
     // 1. Cambiar estado a disputed
@@ -172,7 +173,8 @@ export async function confirmReturnAndRefund(token: string) {
       .eq('id', itemId)
       .single();
 
-    if (fetchErr || !item) return { success: false, error: "Item no encontrado." };
+    if (fetchErr) return { success: false, error: `Error al recuperar el ítem: ${fetchErr.message}` };
+    if (!item) return { success: false, error: "El ítem solicitado no existe." };
     if (item.status !== 'disputed') return { success: false, error: "El ítem no está en una disputa válida." };
 
     const paymentId = (item.orders as any).mp_payment_id;
