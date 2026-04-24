@@ -12,7 +12,7 @@ export default async function AdminCRMPage() {
   // Solo contamos ventas completadas que NO han sido reembolsadas
   const { data: salesData } = await supabaseAdmin
     .from('orders')
-    .select('total_amount')
+    .select('total_amount, order_items(status)')
     .eq('payment_status', 'completed');
 
   const { count: sellerCount } = await supabaseAdmin
@@ -27,27 +27,41 @@ export default async function AdminCRMPage() {
 
   const { data: recentOrders } = await supabaseAdmin
     .from('orders')
-    .select('*')
+    .select('*, order_items(status)')
     .order('created_at', { ascending: false })
-    .limit(10); // Aumentamos un poco el límite para ver más actividad
+    .limit(10);
 
-  const totalSalesValue = salesData?.reduce((acc, curr) => acc + (curr.total_amount || 0), 0) || 0;
+  // Solo contabilizamos si TODOS los items de la orden están 'completed'
+  const totalSalesValue = salesData?.reduce((acc, curr: any) => {
+    const isConfirmed = curr.order_items?.length > 0 && curr.order_items.every((item: any) => item.status === 'completed');
+    return isConfirmed ? acc + (curr.total_amount || 0) : acc;
+  }, 0) || 0;
 
-  // Función auxiliar para labels de estado
-  const getStatusLabel = (status: string) => {
-    switch (status) {
+  // Función auxiliar para determinar el estado visual
+  const getOrderDisplayStatus = (order: any) => {
+    if (order.payment_status === 'completed') {
+      const hasPending = order.order_items?.some((item: any) => item.status === 'pending');
+      return hasPending ? 'awaiting_confirmation' : 'completed';
+    }
+    return order.payment_status;
+  };
+
+  const getStatusLabel = (displayStatus: string) => {
+    switch (displayStatus) {
       case 'completed': return 'Pagado';
+      case 'awaiting_confirmation': return 'Por Confirmar';
       case 'refunded': return 'Devuelto';
       case 'disputed': return 'En Disputa';
       case 'pendiente': return 'Pendiente';
       case 'processing': return 'En Tránsito';
-      default: return status;
+      default: return displayStatus;
     }
   };
 
-  const getStatusStyles = (status: string) => {
-    switch (status) {
+  const getStatusStyles = (displayStatus: string) => {
+    switch (displayStatus) {
       case 'completed': return 'bg-[#00E0A6]/10 text-[#008F6A]';
+      case 'awaiting_confirmation': return 'bg-amber-50 text-amber-600 border border-amber-100';
       case 'refunded': return 'bg-red-50 text-red-500 border border-red-100';
       case 'disputed': return 'bg-orange-50 text-orange-600 border border-orange-100';
       case 'pendiente': return 'bg-slate-200 text-slate-500';
@@ -115,8 +129,8 @@ export default async function AdminCRMPage() {
                 <div>
                   <p className="text-sm font-bold text-accent">S/ {order.total_amount}</p>
                 </div>
-                <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${getStatusStyles(order.payment_status)}`}>
-                  {getStatusLabel(order.payment_status)}
+                <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${getStatusStyles(getOrderDisplayStatus(order))}`}>
+                  {getStatusLabel(getOrderDisplayStatus(order))}
                 </div>
               </div>
             </div>

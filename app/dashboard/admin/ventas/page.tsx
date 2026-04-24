@@ -7,7 +7,7 @@ export default async function AdminSalesPage() {
   // Obtener órdenes con detalles
   const { data: orders, error } = await supabaseAdmin
     .from('orders')
-    .select('*')
+    .select('*, order_items(status)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -65,12 +65,16 @@ export default async function AdminSalesPage() {
                   <td className="px-8 py-6">
                     <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
                       order.payment_status === 'completed' 
-                        ? 'bg-[#00E0A6]/10 text-[#008F6A]' 
+                        ? (order.order_items?.some((it: any) => it.status === 'pending') 
+                            ? 'bg-amber-50 text-amber-600 border border-amber-100' 
+                            : 'bg-[#00E0A6]/10 text-[#008F6A]')
                         : order.payment_status === 'refunded'
                           ? 'bg-red-50 text-red-500 border border-red-100'
                           : 'bg-orange-100 text-orange-600'
                     }`}>
-                      {order.payment_status === 'completed' ? 'Completado' : order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
+                      {order.payment_status === 'completed' 
+                        ? (order.order_items?.some((it: any) => it.status === 'pending') ? 'Por Confirmar' : 'Completado') 
+                        : order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
                     </div>
                   </td>
                 </tr>

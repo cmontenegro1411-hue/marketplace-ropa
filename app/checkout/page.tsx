@@ -19,7 +19,6 @@ export default function CheckoutPage() {
   const { data: _session } = useSession();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('Procesando pago seguro...');
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -33,7 +32,6 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    setLoadingMessage('Preparando pasarela de pago...');
     setError(null);
     try {
       // Nueva validación de email
@@ -77,11 +75,9 @@ export default function CheckoutPage() {
     }
 
     try {
-      setLoadingMessage('Simulando transacción segura...');
       const result = await completePurchase(cart.map(i => i.id), formData);
       
       if (result.success) {
-        setLoadingMessage('¡Pago exitoso! Redirigiendo...');
         clearCart();
         // Soft navigation con router.push para evitar parpadeos
         router.push(`/checkout/success?payment_id=bypass_${Date.now()}&status=approved`);
@@ -222,10 +218,7 @@ export default function CheckoutPage() {
                   disabled={isProcessing}
                   className="w-full py-5 bg-primary text-cream rounded-full text-base font-bold uppercase tracking-widest shadow-xl hover:bg-primary/90 hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2"
                 >
-                  {isProcessing
-                    ? '⏳ Preparando pasarela segura...'
-                    : `Proceder al Pago · S/ ${totalPrice.toLocaleString()}`
-                  }
+                  {`Proceder al Pago · S/ ${totalPrice.toLocaleString()}`}
                 </button>
               )}
 
@@ -268,27 +261,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </Container>
-
-      {/* OVERLAY DE CARGA PREMIUM */}
-      {isProcessing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cream/90 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="text-center space-y-6 max-w-xs animate-in zoom-in slide-in-from-bottom-4 duration-700">
-            <div className="relative">
-              <div className="w-20 h-20 border-4 border-primary/10 border-t-accent rounded-full animate-spin mx-auto"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-serif font-bold text-primary">{loadingMessage}</h3>
-              <p className="text-[10px] text-muted uppercase tracking-[0.2em] font-bold">Seguridad Cifrada • Moda Circular</p>
-            </div>
-            <div className="pt-4">
-               <p className="text-[9px] text-muted italic">No cierres esta ventana mientras aseguramos tus prendas.</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

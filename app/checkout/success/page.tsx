@@ -65,7 +65,7 @@ export default function SuccessPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-cream flex items-center justify-center">
-        <p className="text-primary font-serif italic animate-pulse">Cargando confirmación...</p>
+        <div className="w-12 h-12 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
       </div>
     }>
       <SuccessContent />
