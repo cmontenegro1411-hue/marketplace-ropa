@@ -11,7 +11,7 @@ export async function processEscrowRelease(itemId: string) {
     // 1. Obtener detalles del ítem usando el cliente admin
     const { data: item, error: fetchErr } = await supabaseAdmin
       .from('order_items')
-      .select('id, seller_id, payout_amount, status, payout_released, price')
+      .select('id, seller_id, payout_amount, status, payout_released, price, products(title)')
       .eq('id', itemId)
       .single();
 
@@ -19,6 +19,8 @@ export async function processEscrowRelease(itemId: string) {
       console.error(`[Escrow] Item ${itemId} no encontrado o error en fetch:`, fetchErr);
       return { success: false, error: `Ítem ${itemId} no encontrado.` };
     }
+
+    const productTitle = (item.products as any)?.title || 'Producto';
 
     // Solo procesar si está pendiente y no ha sido liberado
     if (item.status === 'completed') {
@@ -79,7 +81,7 @@ export async function processEscrowRelease(itemId: string) {
       target_seller_id: item.seller_id,
       payout_amount: amount,
       ref_order_item_id: itemId,
-      tx_description: `Liberación: Producto recibido satisfactoriamente (ID: ${itemId})`
+      tx_description: `Venta: ${productTitle}`
     });
 
     if (rpcErr) {

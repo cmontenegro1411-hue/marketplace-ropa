@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
                       payout_amount: item.payout_amount,
                       ref_order_id: order.id,
                       ref_order_item_id: item.id,
-                      tx_description: `Captura Escrow: ${productTitle} (Neto: S/ ${item.payout_amount})`
+                      tx_description: `Venta (Pendiente): ${productTitle}`
                     });
 
                     // 📈 REGISTRAR INGRESO PARA LA PLATAFORMA (Comisión 10%)

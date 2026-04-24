@@ -206,7 +206,7 @@ export async function confirmReturnAndRefund(token: string) {
       target_seller_id: item.seller_id,
       payout_to_revert: item.payout_amount,
       ref_order_item_id: itemId,
-      tx_description: `Devolución: Prenda retornada y reembolso procesado (${item.products.title})`
+      tx_description: `Devolución: ${item.products.title}`
     });
 
     if (rpcErr) {
