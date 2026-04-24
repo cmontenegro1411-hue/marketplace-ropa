@@ -29,15 +29,22 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
     const independent: any[] = [];
 
     transactions.forEach(tx => {
+      // Limpiar el nombre del producto de prefijos técnicos
+      const cleanProductName = tx.description
+        .replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: |Liberación: |Liberación por venta: )/i, '')
+        .replace(/^(Clothing|Shoes|Accessories|Bags) > /i, '')
+        .replace(/\(ID: .*\)$/i, '') // Quitar IDs técnicos al final
+        .trim();
+
       if (tx.order_item_id) {
         if (!grouped.has(tx.order_item_id)) {
           grouped.set(tx.order_item_id, {
             id: tx.order_item_id,
             amount: tx.amount,
-            description: tx.description.replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: )/i, ''),
+            productName: cleanProductName,
             captureDate: null,
             releaseDate: null,
-            type: 'capture', // Empieza como captura y mejora si hay un evento posterior
+            type: 'capture',
             isDisputed: orderStatuses?.[tx.order_item_id] === 'disputed' || orderStatuses?.[tx.order_item_id] === 'refund_requested'
           });
         }
@@ -46,43 +53,55 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
         
         if (tx.type === 'capture') {
           g.captureDate = tx.created_at;
-          // Intentamos limpiar la descripción de cualquier prefijo para mostrar solo la prenda
-          // También eliminamos categorías técnicas en inglés si aparecen al inicio
-          const cleanDesc = tx.description
-            .replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: )/i, '')
-            .replace(/^(Clothing|Shoes|Accessories|Bags) > /i, '');
-          
-          if (cleanDesc !== tx.description) {
-            g.description = cleanDesc;
+          if (cleanProductName && cleanProductName !== '') {
+            g.productName = cleanProductName;
           }
         } else if (tx.type === 'release') {
           g.releaseDate = tx.created_at;
           g.type = 'release';
         } else if (tx.type === 'refund') {
-          g.releaseDate = tx.created_at; // Usamos releaseDate para representar la fecha final
+          g.releaseDate = tx.created_at;
           g.type = 'refund';
         }
       } else {
         independent.push({
           id: tx.id,
           amount: tx.amount,
-          description: tx.description,
+          productName: cleanProductName,
+          description: tx.description, // Backup original
           captureDate: tx.type === 'capture' ? tx.created_at : null,
           releaseDate: tx.type !== 'capture' ? tx.created_at : null,
           type: tx.type,
-          isDisputed: tx.order_item_id ? (orderStatuses?.[tx.order_item_id] === 'disputed' || orderStatuses?.[tx.order_item_id] === 'refund_requested') : false
+          isDisputed: false
         });
       }
     });
 
-    return [...Array.from(grouped.values()), ...independent]
-      .sort((a, b) => {
-        // Priorizar fecha de captura (venta inicial) para el orden cronológico descendente
-        const dateA = new Date(a.captureDate || a.releaseDate || 0).getTime();
-        const dateB = new Date(b.captureDate || b.releaseDate || 0).getTime();
-        return dateB - dateA;
-      });
-  }, [transactions]);
+    // Construir la descripción final con formato "Motivo (Prenda)"
+    const processed = [...Array.from(grouped.values()), ...independent].map(item => {
+      let reason = "";
+      
+      if (item.type === 'capture') reason = "Venta registrada en espera de entrega";
+      else if (item.type === 'release') reason = "Venta completada y fondos liberados";
+      else if (item.type === 'refund') reason = "Prenda retornada y reembolso procesado";
+      else if (item.type === 'withdrawal') reason = "Retiro de fondos solicitado";
+      else reason = "Movimiento de billetera";
+
+      if (item.productName && item.type !== 'withdrawal') {
+        item.description = `${reason} (${item.productName})`;
+      } else if (!item.description) {
+        item.description = reason;
+      }
+
+      return item;
+    });
+
+    return processed.sort((a, b) => {
+      const dateA = new Date(a.captureDate || a.releaseDate || 0).getTime();
+      const dateB = new Date(b.captureDate || b.releaseDate || 0).getTime();
+      return dateB - dateA;
+    });
+  }, [transactions, orderStatuses]);
 
   if (!transactions || transactions.length === 0) {
     return (
