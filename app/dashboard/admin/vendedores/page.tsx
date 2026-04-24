@@ -3,10 +3,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
+
 export default async function AdminSellersPage() {
-  // 1. Obtener vendedores con conteo de productos
-  // Nota: En Supabase, para obtener el count de una relación usamos .select('*, products(count)')
-  const { data: sellers, error } = await supabaseAdmin
+  // 1. Obtener vendedores base
+  const { data: sellers, error: sellersError } = await supabaseAdmin
     .from('users')
     .select(`
       id,
@@ -21,15 +21,48 @@ export default async function AdminSellersPage() {
     .eq('role', 'seller')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error("Error fetching sellers:", error);
+  if (sellersError) {
+    console.error("Error fetching sellers:", sellersError);
   }
+
+  // 2. Obtener el resumen de transacciones por vendedor para calcular disputas
+  const { data: orderItems, error: itemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('seller_id, price, status, payout_amount');
+
+  if (itemsError) {
+    console.error("Error fetching order items for dashboard:", itemsError);
+  }
+
+  // 3. Procesar datos financieros por vendedor
+  const processedSellers = sellers?.map(seller => {
+    const sellerItems = orderItems?.filter(item => item.seller_id === seller.id) || [];
+    
+    // Suma de lo que está en disputa o solicitado para devolución
+    const disputedAmount = sellerItems
+      .filter(item => item.status === 'disputed' || item.status === 'refund_requested')
+      .reduce((sum, item) => sum + (item.price || 0), 0);
+
+    // Ventas totales finalizadas (lo que ya es balance disponible)
+    const completedSales = (seller.balance_available || 0);
+
+    // Ventas en tránsito (lo que está en escrow sin problemas)
+    // Restamos lo disputado del balance pendiente para mayor precisión
+    const pendingSales = Math.max(0, (seller.balance_pending || 0) - (disputedAmount * 0.9)); 
+
+    return {
+      ...seller,
+      completedSales,
+      pendingSales,
+      disputedAmount
+    };
+  });
 
   return (
     <div className="space-y-10">
       <div>
         <h1 className="text-3xl font-serif font-bold text-primary mb-2">Directorio de Vendedores</h1>
-        <p className="text-muted text-sm font-medium italic">Gestión de miembros y estadísticas de publicación.</p>
+        <p className="text-muted text-sm font-medium italic">Gestión de miembros y estadísticas financieras de la plataforma.</p>
       </div>
 
       <div className="bg-white rounded-[2.5rem] editorial-shadow border border-sand/50 overflow-hidden">
@@ -39,58 +72,66 @@ export default async function AdminSellersPage() {
               <tr className="bg-slate-50 border-b border-sand/30">
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Vendedor</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Contacto</th>
-                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Publicaciones</th>
+                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted text-center">Publicaciones</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Total Ventas</th>
-                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Registro</th>
-                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Estado</th>
+                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">En Disputa</th>
+                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted text-center">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-sand/20">
-              {sellers?.map((seller: any) => {
-                const totalSales = (seller.balance_available || 0) + (seller.balance_pending || 0);
-                
-                return (
-                  <tr key={seller.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center font-bold text-xs">
-                          {seller.name?.substring(0, 2).toUpperCase() || '??'}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-primary">{seller.name}</p>
-                          <p className="text-[10px] text-muted tracking-tighter uppercase font-medium">ID: {seller.id.substring(0, 8)}...</p>
-                        </div>
+              {processedSellers?.map((seller: any) => (
+                <tr key={seller.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center font-bold text-xs">
+                        {seller.name?.substring(0, 2).toUpperCase() || '??'}
                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-xs font-medium text-primary mb-1">{seller.email}</p>
-                      <p className="text-[10px] text-muted font-medium">{seller.whatsapp_number || 'Sin WhatsApp'}</p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-serif font-bold text-primary">
-                          {seller.products?.[0]?.count || 0}
-                        </span>
-                        <span className="text-[10px] text-muted font-bold uppercase">Prendas</span>
+                      <div>
+                        <p className="text-sm font-bold text-primary">{seller.name}</p>
+                        <p className="text-[10px] text-muted tracking-tighter uppercase font-medium">ID: {seller.id.substring(0, 8)}...</p>
                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                       <p className="text-sm font-bold text-accent">S/ {totalSales.toLocaleString()}</p>
-                       <p className="text-[9px] text-muted font-bold uppercase">Confirmado</p>
-                    </td>
-                    <td className="px-8 py-6">
-                       <p className="text-xs font-medium text-muted">{new Date(seller.created_at).toLocaleDateString()}</p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className="bg-[#00E0A6]/10 text-[#008F6A] text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-                        Activo
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <p className="text-xs font-medium text-primary mb-1">{seller.email}</p>
+                    <p className="text-[10px] text-muted font-medium">{seller.whatsapp_number || 'Sin WhatsApp'}</p>
+                  </td>
+                  <td className="px-8 py-6 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-serif font-bold text-primary">
+                        {seller.products?.[0]?.count || 0}
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                      <span className="text-[9px] text-muted font-bold uppercase">Prendas</span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-accent">S/ {seller.completedSales.toLocaleString()}</p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sand animate-pulse"></span>
+                        <p className="text-[9px] text-muted font-bold uppercase">S/ {seller.pendingSales.toLocaleString()} en Escrow</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    {seller.disputedAmount > 0 ? (
+                      <div className="bg-orange-50 border border-orange-100 rounded-xl p-2 inline-block">
+                        <p className="text-sm font-bold text-orange-600">S/ {seller.disputedAmount.toLocaleString()}</p>
+                        <p className="text-[9px] text-orange-700 font-bold uppercase tracking-tight">Retención Activa</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted/40 font-medium italic">Sin disputas</p>
+                    )}
+                  </td>
+                  <td className="px-8 py-6 text-center">
+                    <span className="bg-[#00E0A6]/10 text-[#008F6A] text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                      Activo
+                    </span>
+                  </td>
+                </tr>
+              ))}
 
-              {(!sellers || sellers.length === 0) && (
+              {(!processedSellers || processedSellers.length === 0) && (
                 <tr>
                   <td colSpan={6} className="px-8 py-20 text-center text-muted italic">
                     No se encontraron vendedores registrados.
