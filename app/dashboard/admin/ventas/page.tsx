@@ -65,7 +65,7 @@ export default async function AdminSalesPage() {
                   <td className="px-8 py-6">
                     <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
                       order.payment_status === 'completed' 
-                        ? (order.order_items?.some((it: any) => it.status === 'pending') 
+                        ? (order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped') 
                             ? 'bg-amber-50 text-amber-600 border border-amber-100' 
                             : 'bg-[#00E0A6]/10 text-[#008F6A]')
                         : order.payment_status === 'refunded'
@@ -73,7 +73,7 @@ export default async function AdminSalesPage() {
                           : 'bg-orange-100 text-orange-600'
                     }`}>
                       {order.payment_status === 'completed' 
-                        ? (order.order_items?.some((it: any) => it.status === 'pending') ? 'Por Confirmar' : 'Completado') 
+                        ? (order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped') ? 'Por Confirmar' : 'Completado') 
                         : order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
                     </div>
                   </td>

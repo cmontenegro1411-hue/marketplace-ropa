@@ -38,22 +38,21 @@ export default async function AdminSellersPage() {
   const processedSellers = sellers?.map(seller => {
     const sellerItems = orderItems?.filter(item => item.seller_id === seller.id) || [];
     
+    // Volumen total de ventas (Disponible + Pendiente)
+    const totalVolume = (seller.balance_available || 0) + (seller.balance_pending || 0);
+    const availableBalance = (seller.balance_available || 0);
+    const pendingBalance = (seller.balance_pending || 0);
+
     // Suma de lo que está en disputa o solicitado para devolución
     const disputedAmount = sellerItems
       .filter(item => item.status === 'disputed' || item.status === 'refund_requested')
       .reduce((sum, item) => sum + (item.price || 0), 0);
 
-    // Ventas totales finalizadas (lo que ya es balance disponible)
-    const completedSales = (seller.balance_available || 0);
-
-    // Ventas en tránsito (lo que está en escrow sin problemas)
-    // Restamos lo disputado del balance pendiente para mayor precisión
-    const pendingSales = Math.max(0, (seller.balance_pending || 0) - (disputedAmount * 0.9)); 
-
     return {
       ...seller,
-      completedSales,
-      pendingSales,
+      totalVolume,
+      availableBalance,
+      pendingBalance,
       disputedAmount
     };
   });
@@ -73,7 +72,7 @@ export default async function AdminSellersPage() {
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Vendedor</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Contacto</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted text-center">Publicaciones</th>
-                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Total Ventas</th>
+                <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">Total Ventas (GMV)</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted">En Disputa</th>
                 <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted text-center">Estado</th>
               </tr>
@@ -106,10 +105,12 @@ export default async function AdminSellersPage() {
                   </td>
                   <td className="px-8 py-6">
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-accent">S/ {seller.completedSales.toLocaleString()}</p>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sand animate-pulse"></span>
-                        <p className="text-[9px] text-muted font-bold uppercase">S/ {seller.pendingSales.toLocaleString()} en Escrow</p>
+                      <p className="text-sm font-bold text-primary">S/ {seller.totalVolume.toLocaleString()}</p>
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-[9px] text-[#008F6A] font-bold uppercase">S/ {seller.availableBalance.toLocaleString()} Disponible</p>
+                        {seller.pendingBalance > 0 && (
+                          <p className="text-[9px] text-amber-600 font-bold uppercase">S/ {seller.pendingBalance.toLocaleString()} en Escrow</p>
+                        )}
                       </div>
                     </div>
                   </td>

@@ -12,18 +12,30 @@ export default async function AdminCRMPage() {
   // Solo contamos ventas completadas que NO han sido reembolsadas
   const { data: salesData } = await supabaseAdmin
     .from('orders')
-    .select('total_amount, order_items(status)')
-    .eq('payment_status', 'completed');
+    .select('total_amount, payment_status, order_items(status)')
+    .or('payment_status.eq.completed,payment_status.eq.pendiente');
 
   const { count: sellerCount } = await supabaseAdmin
     .from('users')
     .select('*', { count: 'exact', head: true })
     .eq('role', 'seller');
 
-  const { count: pendingOrders } = await supabaseAdmin
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('payment_status', 'pendiente');
+  // Solo contabilizamos si TODOS los items de la orden están 'completed'
+  const totalSalesValue = salesData
+    ?.filter(o => o.payment_status === 'completed')
+    .reduce((acc, curr: any) => {
+      const isConfirmed = curr.order_items?.length > 0 && curr.order_items.every((item: any) => item.status === 'completed');
+      return isConfirmed ? acc + (curr.total_amount || 0) : acc;
+    }, 0) || 0;
+
+  // Pendientes = Pago pendiente O Pago completado pero items en Escrow (pending/shipped)
+  const pendingOrdersCount = salesData?.filter((order: any) => {
+    if (order.payment_status === 'pendiente') return true;
+    if (order.payment_status === 'completed') {
+      return order.order_items?.some((item: any) => item.status === 'pending' || item.status === 'shipped');
+    }
+    return false;
+  }).length || 0;
 
   const { data: recentOrders } = await supabaseAdmin
     .from('orders')
@@ -31,17 +43,11 @@ export default async function AdminCRMPage() {
     .order('created_at', { ascending: false })
     .limit(10);
 
-  // Solo contabilizamos si TODOS los items de la orden están 'completed'
-  const totalSalesValue = salesData?.reduce((acc, curr: any) => {
-    const isConfirmed = curr.order_items?.length > 0 && curr.order_items.every((item: any) => item.status === 'completed');
-    return isConfirmed ? acc + (curr.total_amount || 0) : acc;
-  }, 0) || 0;
-
   // Función auxiliar para determinar el estado visual
   const getOrderDisplayStatus = (order: any) => {
     if (order.payment_status === 'completed') {
-      const hasPending = order.order_items?.some((item: any) => item.status === 'pending');
-      return hasPending ? 'awaiting_confirmation' : 'completed';
+      const hasEscrow = order.order_items?.some((item: any) => item.status === 'pending' || item.status === 'shipped');
+      return hasEscrow ? 'awaiting_confirmation' : 'completed';
     }
     return order.payment_status;
   };
@@ -99,10 +105,10 @@ export default async function AdminCRMPage() {
         <div className="bg-white p-8 rounded-[2rem] editorial-shadow border border-sand/50">
           <div className="flex items-center gap-4 mb-4 text-[#C2A58F]">
             <Clock size={24} />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Pendientes</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Pendientes / Escrow</span>
           </div>
-          <div className="text-4xl font-serif font-bold text-primary">{pendingOrders || 0}</div>
-          <p className="text-xs text-muted mt-2 font-medium">Pedidos esperando confirmación</p>
+          <div className="text-4xl font-serif font-bold text-primary">{pendingOrdersCount || 0}</div>
+          <p className="text-xs text-muted mt-2 font-medium">Pagos pendientes y fondos en Escrow</p>
         </div>
       </div>
 
