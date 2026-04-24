@@ -12,11 +12,11 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
-    console.log('[SIGNUP] Intentando registro:', { email });
+    const { email, password, name, dni, phone } = await req.json();
+    console.log('[SIGNUP] Intentando registro:', { email, dni, phone });
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ message: 'Todos los campos son requeridos' }, { status: 400 });
+    if (!email || !password || !name || !dni || !phone) {
+      return NextResponse.json({ message: 'Todos los campos son requeridos (Nombre, DNI, Celular, Email, Contraseña)' }, { status: 400 });
     }
 
     // 1. Validar si el correo ya existe en `users`
@@ -40,6 +40,8 @@ export async function POST(req: Request) {
           email, 
           password_hash: hashedPassword, 
           name, 
+          dni,
+          whatsapp_number: phone,
           role: 'seller'
         }
       ])

@@ -195,7 +195,7 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                         returned: 'bg-gray-100 text-gray-800'
                       };
                       const statusLabels = {
-                        pending: 'EN FIDEICOMISO',
+                        pending: 'PENDIENTE (SCROW)',
                         completed: 'LIBERADO',
                         disputed: 'EN DISPUTA',
                         refund_requested: 'RECLAMO ACTIVO',

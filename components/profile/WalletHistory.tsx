@@ -47,7 +47,11 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
         if (tx.type === 'capture') {
           g.captureDate = tx.created_at;
           // Intentamos limpiar la descripción de cualquier prefijo para mostrar solo la prenda
-          const cleanDesc = tx.description.replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: )/i, '');
+          // También eliminamos categorías técnicas en inglés si aparecen al inicio
+          const cleanDesc = tx.description
+            .replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: )/i, '')
+            .replace(/^(Clothing|Shoes|Accessories|Bags) > /i, '');
+          
           if (cleanDesc !== tx.description) {
             g.description = cleanDesc;
           }
@@ -73,8 +77,9 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
 
     return [...Array.from(grouped.values()), ...independent]
       .sort((a, b) => {
-        const dateA = new Date(a.releaseDate || a.captureDate || 0).getTime();
-        const dateB = new Date(b.releaseDate || b.captureDate || 0).getTime();
+        // Priorizar fecha de captura (venta inicial) para el orden cronológico descendente
+        const dateA = new Date(a.captureDate || a.releaseDate || 0).getTime();
+        const dateB = new Date(b.captureDate || b.releaseDate || 0).getTime();
         return dateB - dateA;
       });
   }, [transactions]);
@@ -108,7 +113,7 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
         return {
           bg: 'bg-secondary/10',
           text: 'text-secondary',
-          label: 'En Tránsito',
+          label: 'Pendiente (Scrow)',
           prefix: '+'
         };
       case 'release':

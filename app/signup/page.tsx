@@ -8,8 +8,11 @@ import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [dni, setDni] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -18,7 +21,11 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    if (email !== confirmEmail) {
+      setError('Los correos electrónicos no coinciden');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/signup', {
@@ -27,7 +34,9 @@ export default function SignupPage() {
         body: JSON.stringify({ 
           email, 
           password, 
-          name
+          name,
+          dni,
+          phone
         }),
       });
 
@@ -98,6 +107,32 @@ export default function SignupPage() {
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">DNI / Documento</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={dni}
+                    onChange={(e) => setDni(e.target.value)}
+                    className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
+                    placeholder="8 dígitos"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Celular (WhatsApp)</label>
+                  <input 
+                    required
+                    type="tel" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
+                    placeholder="999888777"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Email de Acceso</label>
                 <input 
@@ -107,6 +142,18 @@ export default function SignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
                   placeholder="tu@email.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Confirmar Email</label>
+                <input 
+                  required
+                  type="email" 
+                  value={confirmEmail}
+                  onChange={(e) => setConfirmEmail(e.target.value)}
+                  className="w-full px-6 py-4 bg-background border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm font-medium" 
+                  placeholder="repite@email.com"
                 />
               </div>
 
