@@ -17,7 +17,7 @@ export function ProfileInventory({ products }: ProfileInventoryProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'reserved' | 'sold'>('all');
 
   const activeProducts = products.filter(p => !p.status || p.status === 'available');
-  const reservedProducts = products.filter(p => p.status === 'reserved');
+  const reservedProducts = products.filter(p => p.status === 'reserved' || p.status === 'shipped');
   const soldProducts = products.filter(p => p.status === 'sold');
 
   const filteredProducts = {
