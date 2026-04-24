@@ -17,9 +17,10 @@ interface Transaction {
 
 interface WalletHistoryProps {
   transactions: Transaction[];
+  orderStatuses?: Record<string, string>;
 }
 
-export function WalletHistory({ transactions }: WalletHistoryProps) {
+export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProps) {
   // Agrupar transacciones por order_item_id para limpiar la vista
   const combinedTransactions = useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
@@ -36,7 +37,8 @@ export function WalletHistory({ transactions }: WalletHistoryProps) {
             description: tx.description.replace('Venta (Bypass): ', '').replace('Venta: ', ''),
             captureDate: null,
             releaseDate: null,
-            type: 'capture' // Empieza como captura y mejora si hay un evento posterior
+            type: 'capture', // Empieza como captura y mejora si hay un evento posterior
+            isDisputed: orderStatuses?.[tx.order_item_id] === 'disputed' || orderStatuses?.[tx.order_item_id] === 'refund_requested'
           });
         }
         
@@ -62,7 +64,8 @@ export function WalletHistory({ transactions }: WalletHistoryProps) {
           description: tx.description,
           captureDate: tx.type === 'capture' ? tx.created_at : null,
           releaseDate: tx.type !== 'capture' ? tx.created_at : null,
-          type: tx.type
+          type: tx.type,
+          isDisputed: tx.order_item_id ? (orderStatuses?.[tx.order_item_id] === 'disputed' || orderStatuses?.[tx.order_item_id] === 'refund_requested') : false
         });
       }
     });
@@ -89,7 +92,16 @@ export function WalletHistory({ transactions }: WalletHistoryProps) {
     );
   }
 
-  const getTransactionStyles = (type: string) => {
+  const getTransactionStyles = (type: string, isDisputed?: boolean) => {
+    if (isDisputed && type !== 'release' && type !== 'refund') {
+      return {
+        bg: 'bg-orange-100',
+        text: 'text-orange-600',
+        label: 'En Disputa',
+        prefix: '+'
+      };
+    }
+
     switch (type) {
       case 'capture':
         return {
@@ -153,7 +165,7 @@ export function WalletHistory({ transactions }: WalletHistoryProps) {
           </thead>
           <tbody className="divide-y divide-sand/50">
             {combinedTransactions.map((tx) => {
-              const styles = getTransactionStyles(tx.type);
+              const styles = getTransactionStyles(tx.type, tx.isDisputed);
               return (
                 <tr key={tx.id} className="hover:bg-cream/20 transition-colors group">
                   <td className="px-6 py-4 max-w-xs">

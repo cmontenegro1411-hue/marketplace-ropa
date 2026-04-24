@@ -58,6 +58,25 @@ export default async function ProfilePage() {
     .order('created_at', { ascending: false })
     .limit(50);
 
+  // 1. Obtener order_items para identificar disputas (Usamos admin para asegurar acceso a todos sus items)
+  const { data: sellerOrderItems } = await supabaseAdmin
+    .from('order_items')
+    .select('id, status, payout_amount')
+    .eq('seller_id', session.user.id);
+
+  const disputedNetAmount = sellerOrderItems
+    ?.filter(item => item.status === 'disputed' || item.status === 'refund_requested')
+    .reduce((sum, item) => sum + (item.payout_amount || 0), 0) || 0;
+
+  // Ajustar el balance pendiente para la vista (Escrow limpio)
+  const adjustedBalancePending = Math.max(0, balancePending - disputedNetAmount);
+
+  // Mapeo de estados para el historial
+  const orderItemStatuses = (sellerOrderItems || []).reduce((acc, item) => {
+    acc[item.id] = item.status;
+    return acc;
+  }, {} as Record<string, string>);
+
   if (productsError) console.error("Error fetching user products:", productsError);
 
   const userName = session.user.name || "Usuario";
@@ -114,8 +133,14 @@ export default async function ProfilePage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted">En Tránsito (Escrow)</span>
-                <span className="font-bold text-xl text-secondary">{formatCurrency(balancePending)}</span>
+                <span className="font-bold text-xl text-secondary">{formatCurrency(adjustedBalancePending)}</span>
               </div>
+              {disputedNetAmount > 0 && (
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-orange-600">En Disputa</span>
+                  <span className="font-bold text-xl text-orange-600">{formatCurrency(disputedNetAmount)}</span>
+                </div>
+              )}
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted">Créditos IA</span>
                 <span className="font-bold text-xl text-primary">{isAdmin ? '∞' : creditInfo.credits_remaining}</span>
@@ -161,7 +186,10 @@ export default async function ProfilePage() {
             </div>
           </div>
           
-          <WalletHistory transactions={walletTransactions || []} />
+          <WalletHistory 
+            transactions={walletTransactions || []} 
+            orderStatuses={orderItemStatuses}
+          />
         </div>
       </Container>
     </main>
