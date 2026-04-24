@@ -177,16 +177,20 @@ export async function confirmReturnAndRefund(token: string) {
     if (!item) return { success: false, error: "El ítem solicitado no existe." };
     if (item.status !== 'disputed') return { success: false, error: "El ítem no está en una disputa válida." };
 
-    const paymentId = (item.orders as any).mp_payment_id;
-    if (!paymentId) {
-       return { success: false, error: "No se encontró el ID de pago de Mercado Pago para procesar el reembolso." };
-    }
-
-    // 1. Procesar REEMBOLSO en Mercado Pago (Monto del ítem)
-    const refundResult = await processPartialRefund(paymentId, item.price);
+    const paymentId = (item.orders as any)?.mp_payment_id;
     
-    if (!refundResult.success) {
-      return { success: false, error: `Error Mercado Pago: ${refundResult.error}` };
+    if (paymentId) {
+      console.log(`[Refund] Procesando reembolso real en Mercado Pago para PagoID: ${paymentId}`);
+      // 1. Procesar REEMBOLSO en Mercado Pago (Monto del ítem)
+      const refundResult = await processPartialRefund(paymentId, item.price);
+      
+      if (!refundResult.success) {
+        console.error(`[Refund] Error en Mercado Pago: ${refundResult.error}`);
+        return { success: false, error: `Error Mercado Pago: ${refundResult.error}` };
+      }
+      console.log(`[Refund] ✅ Reembolso Mercado Pago exitoso.`);
+    } else {
+      console.warn(`[Refund] 🧪 Órden sin mp_payment_id detectada (Bypass/Test). Saltando reembolso en MP y procediendo con reversión interna.`);
     }
 
     // 2. Actualizar estado en DB (Item)
