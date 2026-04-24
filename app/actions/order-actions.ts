@@ -202,10 +202,9 @@ export async function confirmReturnAndRefund(token: string) {
     if (itemUpdateErr) throw itemUpdateErr;
 
     const productInfo = item.products as any;
-    let productTitle = productInfo?.title || 'Producto';
-    if (productInfo?.brand && !productTitle.toLowerCase().includes(productInfo.brand.toLowerCase())) {
-      productTitle = `${productInfo.brand} ${productTitle}`;
-    }
+    const brand = productInfo?.brand || '';
+    const title = productInfo?.title || 'Producto';
+    const productTitle = `${brand} ${title}`.trim();
 
     // 3. Regresar producto a inventario (Disponible) y REVERTIR saldo del vendedor
     const { error: rpcErr } = await supabaseAdmin.rpc('revert_escrow_funds', {

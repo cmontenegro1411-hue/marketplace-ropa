@@ -106,13 +106,14 @@ export async function POST(req: NextRequest) {
                   // 💰 CAPTURAR FONDOS EN BILLETERA (Escrow)
                   // Invocamos el RPC para cada item para tener auditoría detallada
                   for (const item of savedItems) {
-                    const productTitle = fullProducts?.find(p => p.id === item.product_id)?.title || 'Producto';
+                    const product = fullProducts?.find(p => p.id === item.product_id);
+                    const fullTitle = product ? `${product.brand || ''} ${product.title}`.trim() : 'Producto';
                     await supabaseAdmin.rpc('capture_escrow_funds', {
                       target_seller_id: item.seller_id,
                       payout_amount: item.payout_amount,
                       ref_order_id: order.id,
                       ref_order_item_id: item.id,
-                      tx_description: `Venta (Pendiente): ${productTitle}`
+                      tx_description: `Venta: ${fullTitle}`
                     });
 
                     // 📈 REGISTRAR INGRESO PARA LA PLATAFORMA (Comisión 10%)

@@ -34,7 +34,7 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
           grouped.set(tx.order_item_id, {
             id: tx.order_item_id,
             amount: tx.amount,
-            description: tx.description.replace('Venta (Bypass): ', '').replace('Venta: ', ''),
+            description: tx.description.replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: )/i, ''),
             captureDate: null,
             releaseDate: null,
             type: 'capture', // Empieza como captura y mejora si hay un evento posterior
@@ -46,9 +46,10 @@ export function WalletHistory({ transactions, orderStatuses }: WalletHistoryProp
         
         if (tx.type === 'capture') {
           g.captureDate = tx.created_at;
-          // La descripción de captura suele tener el nombre de la prenda
-          if (tx.description.includes('Venta')) {
-            g.description = tx.description.replace('Venta (Bypass): ', '').replace('Venta: ', '');
+          // Intentamos limpiar la descripción de cualquier prefijo para mostrar solo la prenda
+          const cleanDesc = tx.description.replace(/^(Venta \(Bypass\): |Venta: |Venta \(Pendiente\): |Cancelación: |Devolución: )/i, '');
+          if (cleanDesc !== tx.description) {
+            g.description = cleanDesc;
           }
         } else if (tx.type === 'release') {
           g.releaseDate = tx.created_at;

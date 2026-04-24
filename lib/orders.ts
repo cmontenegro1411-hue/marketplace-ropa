@@ -21,10 +21,9 @@ export async function processEscrowRelease(itemId: string) {
     }
 
     const productInfo = item.products as any;
-    let productTitle = productInfo?.title || 'Producto';
-    if (productInfo?.brand && !productTitle.toLowerCase().includes(productInfo.brand.toLowerCase())) {
-      productTitle = `${productInfo.brand} ${productTitle}`;
-    }
+    const brand = productInfo?.brand || '';
+    const title = productInfo?.title || 'Producto';
+    const productTitle = `${brand} ${title}`.trim();
 
     // Solo procesar si está pendiente y no ha sido liberado
     if (item.status === 'completed') {

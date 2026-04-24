@@ -321,7 +321,7 @@ export async function completePurchase(productIds: string[], formData: any) {
              payout_amount: payoutAmount,
              ref_order_id: orderRecord.id,
              ref_order_item_id: itemRecord.id,
-             tx_description: `Venta (Pendiente): ${p.brand} ${p.title}`
+             tx_description: `Venta: ${p.brand} ${p.title}`
            });
            if (rpcErr) console.error(`[Escrow] ❌ Error en capture_escrow_funds:`, rpcErr.message);
            else console.log(`[Escrow] ✅ Fondos capturados para vendedor ${p.seller_id}`);
@@ -437,7 +437,7 @@ export async function markAsAvailable(productId: string) {
     // Verificar propiedad y obtener título
     const { data: existing, error: fetchErr } = await supabase
       .from('products')
-      .select('title, seller_id')
+      .select('title, brand, seller_id')
       .eq('id', productId)
       .single();
 
@@ -459,7 +459,7 @@ export async function markAsAvailable(productId: string) {
         target_seller_id: orderItem.seller_id,
         payout_to_revert: orderItem.payout_amount,
         ref_order_item_id: orderItem.id,
-        tx_description: `Cancelación: ${existing.title}`
+        tx_description: `Cancelación: ${existing.brand || ''} ${existing.title}`.trim()
       });
 
       if (rpcErr) {
