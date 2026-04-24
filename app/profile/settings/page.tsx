@@ -53,6 +53,13 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
   const totalItemsSold = myProducts?.filter(p => p.status === 'sold').length || 0;
   const totalPublished = myProducts?.length || 0;
 
+  // Cálculos de disputa
+  const disputedNetAmount = salesItems
+    ?.filter(item => item.status === 'disputed' || item.status === 'refund_requested')
+    .reduce((acc, curr) => acc + (curr.payout_amount || 0), 0) || 0;
+  
+  const cleanBalancePending = Math.max(0, balancePending - disputedNetAmount);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(amount);
   };
@@ -126,12 +133,41 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                   </p>
                 </div>
 
-                <div className={`p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border border-sand shadow-sm hover:shadow-md transition-shadow ${balancePending === 0 ? 'opacity-60' : ''}`}>
+                <div className={`p-6 bg-gradient-to-br from-white to-sand/20 rounded-3xl border shadow-sm hover:shadow-md transition-all ${disputedNetAmount > 0 ? 'border-orange-200' : 'border-sand'} ${balancePending === 0 ? 'opacity-60' : ''}`}>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">En Fideicomiso (Próximo Pago)</p>
                   <p className="text-3xl font-serif font-bold text-secondary mt-1">{formatCurrency(balancePending)}</p>
-                  <p className="text-xs text-muted mt-2">
-                    {balancePending > 0 ? 'Esperando confirmación del comprador' : 'No hay pagos pendientes'}
-                  </p>
+                  
+                  <div className="text-xs mt-4 space-y-3 pt-3 border-t border-sand/30">
+                    {cleanBalancePending > 0 && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-muted font-medium">
+                          <span>Por liberar:</span>
+                          <span className="font-bold">{formatCurrency(cleanBalancePending)}</span>
+                        </div>
+                        <p className="text-[10px] text-muted italic flex items-center gap-1.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-sand-600"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                          Esperando confirmación del comprador
+                        </p>
+                      </div>
+                    )}
+                    
+                    {disputedNetAmount > 0 && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-orange-600 font-bold">
+                          <span>En Disputa:</span>
+                          <span>{formatCurrency(disputedNetAmount)}</span>
+                        </div>
+                        <p className="text-[10px] text-orange-500 italic font-bold flex items-center gap-1.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          Fondo retenido por reclamo activo
+                        </p>
+                      </div>
+                    )}
+
+                    {balancePending === 0 && (
+                      <p className="text-muted italic py-1">No hay pagos pendientes en este momento.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -152,12 +188,14 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                       const statusColors = {
                         pending: 'bg-sand text-secondary',
                         completed: 'bg-green-100 text-green-800',
-                        disputed: 'bg-red-100 text-red-800'
+                        disputed: 'bg-red-100 text-red-800',
+                        refund_requested: 'bg-orange-100 text-orange-800'
                       };
                       const statusLabels = {
                         pending: 'EN FIDEICOMISO',
                         completed: 'LIBERADO',
-                        disputed: 'EN DISPUTA'
+                        disputed: 'EN DISPUTA',
+                        refund_requested: 'RECLAMO ACTIVO'
                       };
 
                       return (
