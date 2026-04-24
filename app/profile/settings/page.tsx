@@ -47,7 +47,8 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
       *,
       products (title, brand, images)
     `)
-    .eq('seller_id', session.user.id);
+    .eq('seller_id', session.user.id)
+    .order('created_at', { ascending: false });
 
   const totalEarningsGross = myProducts?.filter(p => p.status === 'sold').reduce((acc, curr) => acc + (curr.price || 0), 0) || 0;
   const totalItemsSold = myProducts?.filter(p => p.status === 'sold').length || 0;
@@ -189,13 +190,17 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                         pending: 'bg-sand text-secondary',
                         completed: 'bg-green-100 text-green-800',
                         disputed: 'bg-red-100 text-red-800',
-                        refund_requested: 'bg-orange-100 text-orange-800'
+                        refund_requested: 'bg-orange-100 text-orange-800',
+                        refunded: 'bg-gray-100 text-gray-800',
+                        returned: 'bg-gray-100 text-gray-800'
                       };
                       const statusLabels = {
                         pending: 'EN FIDEICOMISO',
                         completed: 'LIBERADO',
                         disputed: 'EN DISPUTA',
-                        refund_requested: 'RECLAMO ACTIVO'
+                        refund_requested: 'RECLAMO ACTIVO',
+                        refunded: 'REEMBOLSADO',
+                        returned: 'DEVUELTO'
                       };
 
                       return (
