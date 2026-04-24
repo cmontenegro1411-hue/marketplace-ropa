@@ -38,19 +38,37 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL(`/profile?migration=success&plan=${package_id}`, req.url));
     }
 
-    const packages: Record<string, { credits: number }> = {
-      'pkg_5': { credits: 5 },
-      'pkg_15': { credits: 15 },
-      'pkg_50': { credits: 50 },
+    const packages: Record<string, { credits: number, price: number }> = {
+      'pkg_5': { credits: 5, price: 9.90 },
+      'pkg_15': { credits: 15, price: 24.90 },
+      'pkg_50': { credits: 50, price: 69.90 },
     };
 
-    const addedCredits = packages[package_id]?.credits || 0;
+    const packageInfo = packages[package_id];
 
-    if (addedCredits > 0) {
-      await addCredits(user_id, addedCredits);
+    if (packageInfo) {
+      await addCredits(user_id, packageInfo.credits);
+      
+      // 📈 REGISTRAR INGRESO PARA LA PLATAFORMA (Venta de Créditos)
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      await supabaseAdmin.from('platform_revenue').insert({
+        amount: packageInfo.price,
+        type: 'credit_purchase',
+        user_id: user_id,
+        reference_id: payment_id,
+        metadata: { 
+          package_id, 
+          credits: packageInfo.credits 
+        }
+      });
     }
 
-    return NextResponse.redirect(new URL(`/dashboard/credits/success?package=${package_id}&credits=${addedCredits}`, req.url));
+    return NextResponse.redirect(new URL(`/dashboard/credits/success?package=${package_id}&credits=${packageInfo?.credits || 0}`, req.url));
 
   } catch (error: any) {
     console.error('[API Checkout Callback] Error:', error.message);

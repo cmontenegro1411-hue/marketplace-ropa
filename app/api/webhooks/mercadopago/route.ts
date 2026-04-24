@@ -113,6 +113,20 @@ export async function POST(req: NextRequest) {
                       ref_order_item_id: item.id,
                       tx_description: `Captura Escrow: ${productTitle} (Neto: S/ ${item.payout_amount})`
                     });
+
+                    // 📈 REGISTRAR INGRESO PARA LA PLATAFORMA (Comisión 10%)
+                    const itemPlatformComm = item.price * 0.10;
+                    await supabaseAdmin.from('platform_revenue').insert({
+                      amount: Number(itemPlatformComm.toFixed(2)),
+                      type: 'sales_commission',
+                      user_id: item.seller_id, // El vendedor generó la comisión
+                      reference_id: order.id,
+                      metadata: { 
+                        product_id: item.product_id, 
+                        order_item_id: item.id,
+                        price: item.price 
+                      }
+                    });
                   }
                 }
              }

@@ -6,7 +6,8 @@ import {
   ShoppingBag, 
   BarChart3, 
   ArrowLeft,
-  ShieldCheck 
+  ShieldCheck,
+  Banknote
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -54,6 +55,13 @@ export default async function AdminLayout({
           >
             <ShoppingBag className="w-4 h-4" />
             Ventas Realizadas
+          </Link>
+          <Link 
+            href="/dashboard/admin/comisiones"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
+          >
+            <Banknote className="w-4 h-4" />
+            Comisiones
           </Link>
         </nav>
 
