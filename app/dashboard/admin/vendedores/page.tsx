@@ -108,7 +108,7 @@ export default async function AdminSellersPage() {
                       <p className="text-sm font-bold text-primary">S/ {seller.availableBalance.toLocaleString()}</p>
                       {seller.pendingBalance > 0 && (
                         <div className="flex flex-col gap-0.5">
-                          <p className="text-[9px] text-muted font-bold uppercase">S/ {seller.totalVolume.toLocaleString()} Total (inc. Escrow)</p>
+                          <p className="text-[9px] text-amber-600 font-bold uppercase">S/ {seller.pendingBalance.toLocaleString()} (Escrow)</p>
                         </div>
                       )}
                     </div>
