@@ -64,10 +64,17 @@ export default async function AdminCRMPage({
       )
     `);
 
-  if (startDate) query = query.gte('created_at', startDate);
-  if (endDate) query = query.lte('created_at', endDate);
+  // Solo aplicar filtros si el preset no es 'all' o si hay fechas personalizadas
+  if (preset !== 'all') {
+    if (startDate) query = query.gte('created_at', startDate);
+    if (endDate) query = query.lte('created_at', endDate);
+  }
 
-  const { data: ordersData } = await query;
+  const { data: ordersData, error: ordersError } = await query;
+  
+  if (ordersError) {
+    console.error("Error fetching CRM orders:", ordersError);
+  }
 
   const { count: sellerCount } = await supabaseAdmin
     .from('users')
