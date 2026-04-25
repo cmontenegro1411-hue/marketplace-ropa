@@ -9,10 +9,19 @@ export const revalidate = 0; // Datos siempre frescos
 
 export default async function AdminCRMPage() {
   // 1. Obtener métricas
-  // Solo contamos ventas completadas que NO han sido reembolsadas
-  const { data: salesData } = await supabaseAdmin
+  // Traemos todas las órdenes pagadas o pendientes para procesar sus items
+  const { data: ordersData } = await supabaseAdmin
     .from('orders')
-    .select('total_amount, payment_status, order_items(status)')
+    .select(`
+      id,
+      total_amount,
+      payment_status,
+      order_items(
+        price,
+        status,
+        payout_amount
+      )
+    `)
     .or('payment_status.eq.completed,payment_status.eq.pendiente');
 
   const { count: sellerCount } = await supabaseAdmin
@@ -20,16 +29,21 @@ export default async function AdminCRMPage() {
     .select('*', { count: 'exact', head: true })
     .eq('role', 'seller');
 
-  // Solo contabilizamos si TODOS los items de la orden están 'completed'
-  const totalSalesValue = salesData
-    ?.filter(o => o.payment_status === 'completed')
-    .reduce((acc, curr: any) => {
-      const isConfirmed = curr.order_items?.length > 0 && curr.order_items.every((item: any) => item.status === 'completed');
-      return isConfirmed ? acc + (curr.total_amount || 0) : acc;
+  // Cálculo de Ventas Realizadas: Suma de precios de items NO devueltos/cancelados
+  // Usamos 'price' (monto pagado por el comprador) para GMV
+  const totalSalesValue = ordersData?.reduce((acc, order) => {
+    const validItemsPrice = order.order_items?.reduce((sum: number, item: any) => {
+      // Solo sumamos si el item está pagado, enviado o completado
+      if (['pending', 'shipped', 'completed'].includes(item.status)) {
+        return sum + (item.price || 0);
+      }
+      return sum;
     }, 0) || 0;
+    return acc + validItemsPrice;
+  }, 0) || 0;
 
   // Pendientes = Pago pendiente O Pago completado pero items en Escrow (pending/shipped)
-  const pendingOrdersCount = salesData?.filter((order: any) => {
+  const pendingOrdersCount = ordersData?.filter((order: any) => {
     if (order.payment_status === 'pendiente') return true;
     if (order.payment_status === 'completed') {
       return order.order_items?.some((item: any) => item.status === 'pending' || item.status === 'shipped');
@@ -39,7 +53,15 @@ export default async function AdminCRMPage() {
 
   const { data: recentOrders } = await supabaseAdmin
     .from('orders')
-    .select('*, order_items(status)')
+    .select(`
+      *,
+      order_items(
+        id,
+        price,
+        status,
+        products(title, brand, users(name))
+      )
+    `)
     .order('created_at', { ascending: false })
     .limit(10);
 
@@ -126,28 +148,74 @@ export default async function AdminCRMPage() {
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted px-4 py-2 bg-sand/20 rounded-full">Últimos Pedidos</span>
         </div>
 
-        <div className="space-y-4">
-          {recentOrders?.map((order: any) => (
-            <div key={order.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-sand/30 hover:bg-white transition-all transform hover:-translate-x-1">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-primary text-cream rounded-full flex items-center justify-center font-bold text-xs uppercase">
-                  {order.buyer_name?.substring(0, 2) || '??'}
+        <div className="space-y-6">
+          {recentOrders?.map((order: any) => {
+            const displayStatus = getOrderDisplayStatus(order);
+            // Calcular el total efectivo (items no devueltos)
+            const effectiveTotal = order.order_items?.reduce((sum: number, item: any) => {
+              if (item.status !== 'refunded' && item.status !== 'cancelled') {
+                return sum + (item.price || 0);
+              }
+              return sum;
+            }, 0) || 0;
+
+            return (
+              <div key={order.id} className="p-6 bg-slate-50/50 rounded-[2rem] border border-sand/30 hover:bg-white transition-all shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary text-cream rounded-full flex items-center justify-center font-bold text-xs uppercase">
+                      {order.buyer_name?.substring(0, 2) || '??'}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-primary">{order.buyer_name}</p>
+                      <p className="text-[10px] text-muted font-medium uppercase tracking-tighter">
+                        {new Date(order.created_at).toLocaleDateString()} • #{order.id.substring(0, 8)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-6">
+                    <div>
+                      <p className="text-lg font-serif font-bold text-accent">S/ {effectiveTotal}</p>
+                      {effectiveTotal !== order.total_amount && (
+                        <p className="text-[9px] text-muted line-through">Original: S/ {order.total_amount}</p>
+                      )}
+                    </div>
+                    <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${getStatusStyles(displayStatus)}`}>
+                      {getStatusLabel(displayStatus)}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-primary">{order.buyer_name}</p>
-                  <p className="text-[10px] text-muted font-medium uppercase tracking-tighter">{new Date(order.created_at).toLocaleDateString()}</p>
+
+                {/* Desglose de Items */}
+                <div className="mt-4 pl-14 space-y-3 border-l-2 border-sand/20">
+                  {order.order_items?.map((item: any) => (
+                    <div key={item.id} className="flex items-center justify-between group/item">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-primary/80">
+                          {item.products?.brand} {item.products?.title}
+                        </span>
+                        <span className="text-[9px] text-muted font-medium uppercase tracking-tight">
+                          Vendedor: <span className="text-accent/70">{item.products?.users?.name || 'Desconocido'}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter border ${
+                          item.status === 'refunded' ? 'bg-red-50 text-red-500 border-red-100' :
+                          item.status === 'completed' ? 'bg-green-50 text-green-600 border-green-100' :
+                          'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          {item.status === 'refunded' ? 'Devuelto' : 
+                           item.status === 'completed' ? 'Pagado' : 
+                           item.status === 'pending' ? 'Por Confirmar' : item.status}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500">S/ {item.price}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="text-right flex items-center gap-6">
-                <div>
-                  <p className="text-sm font-bold text-accent">S/ {order.total_amount}</p>
-                </div>
-                <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${getStatusStyles(getOrderDisplayStatus(order))}`}>
-                  {getStatusLabel(getOrderDisplayStatus(order))}
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {(!recentOrders || recentOrders.length === 0) && (
             <p className="text-center py-10 text-muted italic">No hay actividad registrada aún.</p>

@@ -187,20 +187,26 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
                     salesItems.map((item: any) => {
                       const product = item.products;
                       const statusColors = {
-                        pending: 'bg-sand text-secondary',
-                        completed: 'bg-green-100 text-green-800',
-                        disputed: 'bg-red-100 text-red-800',
-                        refund_requested: 'bg-orange-100 text-orange-800',
-                        refunded: 'bg-gray-100 text-gray-800',
-                        returned: 'bg-gray-100 text-gray-800'
+                        pending: 'bg-amber-50 text-amber-600 border border-amber-100',
+                        shipped: 'bg-blue-50 text-blue-600 border border-blue-100',
+                        completed: 'bg-green-50 text-[#008F6A] border border-green-100',
+                        delivered: 'bg-green-50 text-[#008F6A] border border-green-100',
+                        disputed: 'bg-orange-50 text-orange-600 border border-orange-100',
+                        refund_requested: 'bg-red-50 text-red-600 border border-red-100',
+                        refunded: 'bg-slate-100 text-slate-500 border border-slate-200',
+                        returned: 'bg-slate-100 text-slate-500 border border-slate-200',
+                        cancelled: 'bg-slate-100 text-slate-500 border border-slate-200'
                       };
                       const statusLabels = {
-                        pending: 'PENDIENTE (SCROW)',
+                        pending: 'EN GARANTÍA (SCROW)',
+                        shipped: 'ENVIADO (SCROW)',
                         completed: 'LIBERADO',
+                        delivered: 'LIBERADO',
                         disputed: 'EN DISPUTA',
-                        refund_requested: 'RECLAMO ACTIVO',
-                        refunded: 'REEMBOLSADO',
-                        returned: 'DEVUELTO'
+                        refund_requested: 'DEVUELTO',
+                        refunded: 'DEVUELTO',
+                        returned: 'DEVUELTO',
+                        cancelled: 'DEVUELTO'
                       };
 
                       return (

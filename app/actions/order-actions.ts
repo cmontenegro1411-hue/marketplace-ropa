@@ -175,6 +175,7 @@ export async function confirmReturnAndRefund(token: string) {
 
     if (fetchErr) return { success: false, error: `Error al recuperar el ítem: ${fetchErr.message}` };
     if (!item) return { success: false, error: "El ítem solicitado no existe." };
+    if (item.status === 'refunded') return { success: true };
     if (item.status !== 'disputed') return { success: false, error: "El ítem no está en una disputa válida." };
 
     const paymentId = (item.orders as any)?.mp_payment_id;

@@ -1,17 +1,49 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { CheckCircle2, PackageSearch, ShieldCheck, AlertCircle, Loader2, ArrowRight, Home } from 'lucide-react';
-import { confirmReturnAndRefund } from '@/app/actions/order-actions';
+import { confirmReturnAndRefund, getOrderItemStatus } from '@/app/actions/order-actions';
 import Link from 'next/link';
 
 export default function ConfirmReturnPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [status, setStatus] = useState<'ready' | 'loading' | 'success' | 'error'>('ready');
+  const [status, setStatus] = useState<'ready' | 'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [product, setProduct] = useState<{ title: string; brand: string } | null>(null);
+
+  const checkStatus = async () => {
+    setStatus('loading');
+    try {
+      const result = await getOrderItemStatus(token);
+      if (result.success) {
+        if (result.product) setProduct(result.product);
+        
+        if (result.status === 'refunded') {
+          setStatus('success');
+        } else if (result.status === 'disputed') {
+          setStatus('ready');
+        } else {
+          setStatus('error');
+          setErrorMessage(`Este ítem no puede ser procesado porque su estado actual es: ${result.status}`);
+        }
+      } else {
+        setStatus('error');
+        setErrorMessage(result.error || 'Enlace inválido o expirado.');
+      }
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage('Error al verificar el estado del retorno.');
+    }
+  };
+
+  useEffect(() => {
+    checkStatus();
+  }, [token]);
+
   const handleConfirm = async () => {
+    if (isProcessing) return;
     setIsProcessing(true);
     setStatus('loading');
     
@@ -46,6 +78,13 @@ export default function ConfirmReturnPage({ params }: { params: Promise<{ token:
               </div>
               
               <h1 className="text-3xl font-serif text-primary mb-3">Retorno de Prenda</h1>
+              
+              {product && (
+                <div className="mb-6 px-4 py-3 bg-primary/5 rounded-2xl inline-block border border-primary/10">
+                  <p className="text-primary font-bold text-sm">{product.brand}</p>
+                  <p className="text-muted text-xs italic">{product.title}</p>
+                </div>
+              )}
               <p className="text-muted text-sm leading-relaxed mb-8 px-4">
                 Hola. Si ya tienes la prenda de vuelta y has verificado su estado, por favor confirma la recepción para proceder con el reembolso al comprador.
               </p>
@@ -101,6 +140,13 @@ export default function ConfirmReturnPage({ params }: { params: Promise<{ token:
               </div>
               
               <h2 className="text-3xl font-serif text-primary mb-3">Retorno Finalizado</h2>
+              
+              {product && (
+                <p className="text-primary font-medium text-sm mb-4">
+                  Confirmación de: <br/>
+                  <span className="font-bold">{product.brand} {product.title}</span>
+                </p>
+              )}
               <p className="text-muted text-sm leading-relaxed mb-10 px-4">
                 Has confirmado la recepción de la prenda. Hemos procedido a solicitar el reembolso a Mercado Pago. El comprador verá reflejado su dinero en su cuenta pronto.
               </p>

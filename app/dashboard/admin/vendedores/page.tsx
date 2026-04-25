@@ -105,10 +105,10 @@ export default async function AdminSellersPage() {
                   </td>
                   <td className="px-8 py-6">
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-primary">S/ {seller.availableBalance.toLocaleString()}</p>
+                      <p className="text-sm font-bold text-[#008F6A]">S/ {seller.availableBalance.toLocaleString()}</p>
                       {seller.pendingBalance > 0 && (
                         <div className="flex flex-col gap-0.5">
-                          <p className="text-[9px] text-amber-600 font-bold uppercase">S/ {(seller.availableBalance + seller.pendingBalance).toLocaleString()} (Scrow)</p>
+                          <p className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter">S/ {seller.pendingBalance.toLocaleString()} (En Garantía / Scrow)</p>
                         </div>
                       )}
                     </div>
