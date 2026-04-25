@@ -45,8 +45,15 @@ export default async function AdminCRMPage() {
 
   // Función auxiliar para determinar el estado visual
   const getOrderDisplayStatus = (order: any) => {
+    const allItems = order.order_items || [];
+    const isFullyRefunded = allItems.length > 0 && allItems.every((it: any) => it.status === 'refunded' || it.status === 'cancelled');
+    const hasDispute = allItems.some((it: any) => it.status === 'disputed');
+
+    if (order.payment_status === 'refunded' || isFullyRefunded) return 'refunded';
+    if (hasDispute) return 'disputed';
+
     if (order.payment_status === 'completed') {
-      const hasEscrow = order.order_items?.some((item: any) => item.status === 'pending' || item.status === 'shipped');
+      const hasEscrow = allItems.some((item: any) => item.status === 'pending' || item.status === 'shipped');
       return hasEscrow ? 'awaiting_confirmation' : 'completed';
     }
     return order.payment_status;

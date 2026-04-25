@@ -63,19 +63,58 @@ export default async function AdminSalesPage() {
                     <p className="text-sm font-bold text-slate-500">S/ {order.mp_application_fee || '0.00'}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
-                      order.payment_status === 'completed' 
-                        ? (order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped') 
-                            ? 'bg-amber-50 text-amber-600 border border-amber-100' 
-                            : 'bg-[#00E0A6]/10 text-[#008F6A]')
-                        : order.payment_status === 'refunded'
-                          ? 'bg-red-50 text-red-500 border border-red-100'
-                          : 'bg-orange-100 text-orange-600'
-                    }`}>
-                      {order.payment_status === 'completed' 
-                        ? (order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped') ? 'Por Confirmar' : 'Completado') 
-                        : order.payment_status === 'refunded' ? 'Reembolsado' : 'Pendiente'}
-                    </div>
+                    {(() => {
+                      const allRefunded = order.payment_status === 'refunded' || (order.order_items?.length > 0 && order.order_items?.every((it: any) => it.status === 'refunded' || it.status === 'cancelled'));
+                      const someRefunded = order.order_items?.some((it: any) => it.status === 'refunded' || it.status === 'cancelled');
+                      const hasDispute = order.order_items?.some((it: any) => it.status === 'disputed');
+                      const isPending = order.payment_status === 'completed' && order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped');
+
+                      if (allRefunded) {
+                        return (
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-red-50 text-red-500 border border-red-100">
+                            Reembolsado
+                          </div>
+                        );
+                      }
+
+                      if (hasDispute) {
+                        return (
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-orange-50 text-orange-600 border border-orange-100">
+                            En Disputa
+                          </div>
+                        );
+                      }
+
+                      if (someRefunded) {
+                        return (
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100">
+                            Reembolso Parcial
+                          </div>
+                        );
+                      }
+
+                      if (isPending) {
+                        return (
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
+                            Por Confirmar
+                          </div>
+                        );
+                      }
+
+                      if (order.payment_status === 'completed') {
+                        return (
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-[#00E0A6]/10 text-[#008F6A]">
+                            Completado
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-orange-100 text-orange-600">
+                          Pendiente
+                        </div>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
