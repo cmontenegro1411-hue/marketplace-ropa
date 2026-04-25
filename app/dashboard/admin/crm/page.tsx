@@ -34,6 +34,7 @@ export default async function AdminCRMPage() {
   const totalSalesValue = ordersData?.reduce((acc, order) => {
     const validItemsPrice = order.order_items?.reduce((sum: number, item: any) => {
       // Solo sumamos si el item está pagado, enviado o completado
+      // Excluimos explícitamente refunded, cancelled, disputed y refund_requested
       if (['pending', 'shipped', 'completed'].includes(item.status)) {
         return sum + (item.price || 0);
       }

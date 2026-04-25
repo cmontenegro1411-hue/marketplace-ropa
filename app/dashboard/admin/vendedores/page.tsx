@@ -38,7 +38,12 @@ export default async function AdminSellersPage() {
   const processedSellers = sellers?.map(seller => {
     const sellerItems = orderItems?.filter(item => item.seller_id === seller.id) || [];
     
-    // Volumen total de ventas (Disponible + Pendiente)
+    // Volumen Bruto: Suma de precios de items activos (lo que pagó el cliente)
+    const grossVolume = sellerItems
+      .filter(item => ['pending', 'shipped', 'completed'].includes(item.status))
+      .reduce((sum, item) => sum + (item.price || 0), 0);
+
+    // Saldo Total en Billetera (Disponible + Pendiente)
     const totalVolume = (seller.balance_available || 0) + (seller.balance_pending || 0);
     const availableBalance = (seller.balance_available || 0);
     const pendingBalance = (seller.balance_pending || 0);
@@ -50,6 +55,7 @@ export default async function AdminSellersPage() {
 
     return {
       ...seller,
+      grossVolume,
       totalVolume,
       availableBalance,
       pendingBalance,
@@ -105,12 +111,19 @@ export default async function AdminSellersPage() {
                   </td>
                   <td className="px-8 py-6">
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-[#008F6A]">S/ {seller.availableBalance.toLocaleString()}</p>
-                      {seller.pendingBalance > 0 && (
-                        <div className="flex flex-col gap-0.5">
-                          <p className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter">S/ {seller.pendingBalance.toLocaleString()} (En Garantía / Scrow)</p>
-                        </div>
-                      )}
+                      <div className="flex flex-col mb-2">
+                        <p className="text-[10px] text-muted font-bold uppercase tracking-tight">Ventas Brutas</p>
+                        <p className="text-sm font-bold text-primary">S/ {seller.grossVolume.toLocaleString()}</p>
+                      </div>
+                      <div className="pt-2 border-t border-sand/30">
+                        <p className="text-[10px] text-muted font-bold uppercase tracking-tight">Ganancia Neta (Billetera)</p>
+                        <p className="text-sm font-bold text-[#008F6A]">S/ {seller.availableBalance.toLocaleString()}</p>
+                        {seller.pendingBalance > 0 && (
+                          <p className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter">
+                            S/ {seller.pendingBalance.toLocaleString()} (En Garantía)
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">

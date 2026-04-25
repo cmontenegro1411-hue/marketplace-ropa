@@ -96,10 +96,26 @@ export default async function AdminSalesPage() {
                     </div>
                   </td>
                   <td className="px-8 py-6 align-top">
-                    <p className="text-sm font-bold text-accent">S/ {order.total_amount}</p>
-                    <p className="text-[9px] text-muted font-medium mt-1 italic">
-                      Comisión: S/ {order.mp_application_fee || '0.00'}
-                    </p>
+                    {(() => {
+                      const effectiveTotal = order.order_items?.reduce((sum: number, item: any) => {
+                        if (item.status !== 'refunded' && item.status !== 'cancelled') {
+                          return sum + (item.price || 0);
+                        }
+                        return sum;
+                      }, 0) || 0;
+
+                      return (
+                        <>
+                          <p className="text-sm font-bold text-accent">S/ {effectiveTotal}</p>
+                          {effectiveTotal !== order.total_amount && (
+                            <p className="text-[9px] text-muted line-through">S/ {order.total_amount}</p>
+                          )}
+                          <p className="text-[9px] text-muted font-medium mt-1 italic">
+                            Comisión: S/ {order.mp_application_fee || '0.00'}
+                          </p>
+                        </>
+                      );
+                    })()}
                   </td>
                   <td className="px-8 py-6 align-top">
                     {(() => {
