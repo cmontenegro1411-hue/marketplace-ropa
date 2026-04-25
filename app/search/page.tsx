@@ -33,7 +33,12 @@ export default async function SearchPage({
   // Filtros dinámicos de Segmento (Mujer, Hombre, Niños)
   if (category) {
     if (hasCategorySingular) {
-      dbQuery = dbQuery.ilike('category', `%${category}%`);
+      // Si se busca un segmento específico, incluimos también Unisex para mayor visibilidad
+      if (category !== 'Unisex') {
+        dbQuery = dbQuery.or(`category.ilike.%${category}%,category.ilike.%Unisex%`);
+      } else {
+        dbQuery = dbQuery.ilike('category', `%${category}%`);
+      }
     } else if (hasCategoriesPlural) {
       dbQuery = dbQuery.contains('categories', [category]);
     }
