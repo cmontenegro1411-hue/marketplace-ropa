@@ -33,10 +33,12 @@ export default async function SearchPage({
   // Filtros dinámicos de Segmento (Mujer, Hombre, Niños)
   if (category) {
     if (hasCategorySingular) {
-      // Si se busca un segmento específico, incluimos también Unisex para mayor visibilidad
-      if (category !== 'Unisex') {
+      // Si se busca un segmento específico (Mujer, Hombre, Niños)
+      if (category !== 'Unisex' && type) {
+        // Si hay un tipo seleccionado (ej. Calzado), incluimos Unisex para no ocultar opciones válidas
         dbQuery = dbQuery.or(`category.ilike.%${category}%,category.ilike.%Unisex%`);
       } else {
+        // Si solo se filtra por segmento desde la cabecera, mantenemos el resultado estricto
         dbQuery = dbQuery.ilike('category', `%${category}%`);
       }
     } else if (hasCategoriesPlural) {
