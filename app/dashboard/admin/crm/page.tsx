@@ -8,42 +8,13 @@ import {
   ArrowUpRight,
   UserCheck
 } from "lucide-react";
-import CRMFilters from "./CRMFilters";
+
 
 export const revalidate = 0; 
 
-export default async function AdminCRMPage({
-  searchParams,
-}: {
-  searchParams: { from?: string; to?: string; preset?: string };
-}) {
-  const { from, to, preset } = searchParams;
-
-  // 1. Definir rango de fechas para la consulta
-  let startDate: string | null = null;
-  let endDate: string | null = null;
-
-  if (preset && preset !== 'all') {
-    const now = new Date();
-    if (preset === 'this_month') {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    } else if (preset === 'last_month') {
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString();
-    } else if (preset === 'last_3_months') {
-      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
-    }
-  } else if (from || to) {
-    if (from) startDate = new Date(from).toISOString();
-    if (to) {
-      const end = new Date(to);
-      end.setHours(23, 59, 59, 999);
-      endDate = end.toISOString();
-    }
-  }
-
-  // 2. Obtener órdenes con filtros
-  let query = supabaseAdmin
+export default async function AdminCRMPage() {
+  // 1. Obtener todas las órdenes
+  const { data: ordersData, error: ordersError } = await supabaseAdmin
     .from('orders')
     .select(`
       id,
@@ -59,12 +30,6 @@ export default async function AdminCRMPage({
         products(title, brand, users(name))
       )
     `);
-
-  // Aplicar filtros si existen
-  if (startDate) query = query.gte('created_at', startDate);
-  if (endDate) query = query.lte('created_at', endDate);
-
-  const { data: ordersData, error: ordersError } = await query;
   
   if (ordersError) {
     console.error("Error fetching CRM orders:", ordersError);
@@ -162,7 +127,7 @@ export default async function AdminCRMPage({
         </div>
       </div>
 
-      <CRMFilters />
+      
 
       {/* Grid de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -176,7 +141,7 @@ export default async function AdminCRMPage({
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Ventas Netas</span>
             </div>
             <div className="text-4xl font-serif font-bold text-primary">S/ {totalSalesValue.toLocaleString()}</div>
-            <p className="text-[10px] text-muted mt-2 font-bold uppercase tracking-tight">Periodo seleccionado</p>
+            <p className="text-[10px] text-muted mt-2 font-bold uppercase tracking-tight">Histórico Total</p>
           </div>
         </div>
 
@@ -244,7 +209,7 @@ export default async function AdminCRMPage({
                 </div>
               </div>
             )) : (
-              <p className="text-center py-10 text-muted italic text-sm">No hay datos para este periodo.</p>
+              <p className="text-center py-10 text-muted italic text-sm">No hay datos registrados.</p>
             )}
           </div>
         </div>
@@ -279,7 +244,7 @@ export default async function AdminCRMPage({
                 </div>
               </div>
             )) : (
-              <p className="text-center py-10 text-muted italic text-sm">No hay datos para este periodo.</p>
+              <p className="text-center py-10 text-muted italic text-sm">No hay datos registrados.</p>
             )}
           </div>
         </div>
