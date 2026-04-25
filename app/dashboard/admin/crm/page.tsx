@@ -20,30 +20,26 @@ export default async function AdminCRMPage({
   const { from, to, preset } = searchParams;
 
   // 1. Definir rango de fechas para la consulta
-  let startDate: string | null = from || null;
-  let endDate: string | null = to || null;
+  let startDate: string | null = null;
+  let endDate: string | null = null;
 
-  if (preset) {
+  if (preset && preset !== 'all') {
     const now = new Date();
-    // Ajustar a medianoche local para consistencia
     if (preset === 'this_month') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      endDate = null; // Hasta el presente
     } else if (preset === 'last_month') {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
       endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString();
     } else if (preset === 'last_3_months') {
       startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
-      endDate = null;
     }
-  }
-
-  // Si hay fechas manuales, asegurar que cubran el día completo
-  if (from && !preset) startDate = new Date(from).toISOString();
-  if (to && !preset) {
-    const end = new Date(to);
-    end.setHours(23, 59, 59, 999);
-    endDate = end.toISOString();
+  } else if (from || to) {
+    if (from) startDate = new Date(from).toISOString();
+    if (to) {
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      endDate = end.toISOString();
+    }
   }
 
   // 2. Obtener órdenes con filtros
@@ -64,11 +60,9 @@ export default async function AdminCRMPage({
       )
     `);
 
-  // Solo aplicar filtros si el preset no es 'all' o si hay fechas personalizadas
-  if (preset !== 'all') {
-    if (startDate) query = query.gte('created_at', startDate);
-    if (endDate) query = query.lte('created_at', endDate);
-  }
+  // Aplicar filtros si existen
+  if (startDate) query = query.gte('created_at', startDate);
+  if (endDate) query = query.lte('created_at', endDate);
 
   const { data: ordersData, error: ordersError } = await query;
   
