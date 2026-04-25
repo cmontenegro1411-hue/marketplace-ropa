@@ -107,15 +107,19 @@ export default async function AdminCRMPage({
   // Ranking Compradores
   const buyerMap = new Map();
   ordersData?.forEach(order => {
+    // Normalizar email para evitar duplicados por mayúsculas/minúsculas
+    const emailKey = order.buyer_email?.toLowerCase().trim();
+    if (!emailKey) return;
+
     const validOrderTotal = order.order_items?.reduce((sum: number, item: any) => {
       if (['pending', 'shipped', 'completed'].includes(item.status)) return sum + (item.price || 0);
       return sum;
     }, 0) || 0;
 
     if (validOrderTotal > 0) {
-      const current = buyerMap.get(order.buyer_email) || { name: order.buyer_name, total: 0, orders: 0 };
-      buyerMap.set(order.buyer_email, {
-        name: order.buyer_name,
+      const current = buyerMap.get(emailKey) || { name: order.buyer_name || 'Comprador Anónimo', total: 0, orders: 0 };
+      buyerMap.set(emailKey, {
+        name: current.name, // Mantener el primer nombre encontrado o el más reciente
         total: current.total + validOrderTotal,
         orders: current.orders + 1
       });
