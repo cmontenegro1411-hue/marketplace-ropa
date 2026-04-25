@@ -238,8 +238,8 @@ export async function confirmReturnAndRefund(token: string) {
       .select('status')
       .eq('order_id', item.order_id);
 
-    const allRefunded = allItems?.every(i => i.status === 'refunded');
-    if (allRefunded) {
+    const isFullyRefunded = allItems?.every(i => i.status === 'refunded' || i.status === 'cancelled');
+    if (isFullyRefunded) {
       await supabaseAdmin
         .from('orders')
         .update({ payment_status: 'refunded' })
