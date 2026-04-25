@@ -20,19 +20,30 @@ export default async function AdminCRMPage({
   const { from, to, preset } = searchParams;
 
   // 1. Definir rango de fechas para la consulta
-  let startDate = from;
-  let endDate = to;
+  let startDate: string | null = from || null;
+  let endDate: string | null = to || null;
 
   if (preset) {
     const now = new Date();
+    // Ajustar a medianoche local para consistencia
     if (preset === 'this_month') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      endDate = null; // Hasta el presente
     } else if (preset === 'last_month') {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString();
     } else if (preset === 'last_3_months') {
       startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
+      endDate = null;
     }
+  }
+
+  // Si hay fechas manuales, asegurar que cubran el día completo
+  if (from && !preset) startDate = new Date(from).toISOString();
+  if (to && !preset) {
+    const end = new Date(to);
+    end.setHours(23, 59, 59, 999);
+    endDate = end.toISOString();
   }
 
   // 2. Obtener órdenes con filtros
