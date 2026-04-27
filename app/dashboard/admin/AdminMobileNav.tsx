@@ -7,13 +7,24 @@ import {
   Menu, 
   X, 
   ShieldCheck,
-  ArrowLeft
+  ArrowLeft,
+  BarChart3,
+  Users,
+  ShoppingBag,
+  Banknote
 } from "lucide-react";
+
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  BarChart3,
+  Users,
+  ShoppingBag,
+  Banknote
+};
 
 interface NavItem {
   href: string;
   label: string;
-  icon: any;
+  icon: string;
 }
 
 export const AdminMobileNav = ({ items }: { items: NavItem[] }) => {
@@ -67,7 +78,10 @@ export const AdminMobileNav = ({ items }: { items: NavItem[] }) => {
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${isActive ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-cream/70'}`}
                   >
-                    <item.icon className="w-5 h-5" />
+                    {(() => {
+                      const Icon = ICON_MAP[item.icon];
+                      return Icon ? <Icon className="w-5 h-5" /> : null;
+                    })()}
                     <span className="font-bold text-sm uppercase tracking-widest">{item.label}</span>
                   </Link>
                 );

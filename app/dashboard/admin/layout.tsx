@@ -25,11 +25,18 @@ export default async function AdminLayout({
   }
 
   const navItems = [
-    { href: "/dashboard/admin/crm", label: "Dashboard", icon: BarChart3 },
-    { href: "/dashboard/admin/vendedores", label: "Vendedores", icon: Users },
-    { href: "/dashboard/admin/ventas", label: "Ventas Realizadas", icon: ShoppingBag },
-    { href: "/dashboard/admin/comisiones", label: "Comisiones", icon: Banknote },
+    { href: "/dashboard/admin/crm", label: "Dashboard", icon: "BarChart3" },
+    { href: "/dashboard/admin/vendedores", label: "Vendedores", icon: "Users" },
+    { href: "/dashboard/admin/ventas", label: "Ventas Realizadas", icon: "ShoppingBag" },
+    { href: "/dashboard/admin/comisiones", label: "Comisiones", icon: "Banknote" },
   ];
+
+  const ICON_MAP: Record<string, React.ComponentType<any>> = {
+    BarChart3,
+    Users,
+    ShoppingBag,
+    Banknote
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50/50">
@@ -44,16 +51,19 @@ export default async function AdminLayout({
         </div>
 
         <nav className="flex-1 p-6 space-y-2 mt-4">
-          {navItems.map((item) => (
-            <Link 
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const Icon = ICON_MAP[item.icon];
+            return (
+              <Link 
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
+              >
+                {Icon && <Icon className="w-4 h-4" />}
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-6 border-t border-cream/10">
