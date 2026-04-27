@@ -71,7 +71,8 @@ export default async function AdminSellersPage() {
       </div>
 
       <div className="bg-white rounded-[2.5rem] editorial-shadow border border-sand/50 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Vista Desktop (Tabla) */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-sand/30">
@@ -153,6 +154,80 @@ export default async function AdminSellersPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Vista Móvil (Cards) */}
+        <div className="lg:hidden divide-y divide-sand/20">
+          {processedSellers?.map((seller: any) => (
+            <div key={seller.id} className="p-6 space-y-6">
+              {/* Header Card: Info Básica */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-accent text-white rounded-2xl flex items-center justify-center font-bold text-sm shadow-lg shadow-accent/20">
+                    {seller.name?.substring(0, 2).toUpperCase() || '??'}
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-primary">{seller.name}</p>
+                    <p className="text-[10px] text-muted uppercase tracking-widest font-bold">Vendedor Activo</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                    <p className="text-xl font-serif font-bold text-primary">{seller.products?.[0]?.count || 0}</p>
+                    <p className="text-[8px] text-muted font-bold uppercase tracking-widest">Prendas</p>
+                </div>
+              </div>
+
+              {/* Contacto */}
+              <div className="grid grid-cols-2 gap-4 py-4 border-y border-sand/10">
+                <div className="overflow-hidden">
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-tight mb-1">Email</p>
+                    <p className="text-xs font-medium text-primary truncate">{seller.email}</p>
+                </div>
+                <div>
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-tight mb-1">WhatsApp</p>
+                    <p className="text-xs font-medium text-primary">{seller.whatsapp_number || 'No reg.'}</p>
+                </div>
+              </div>
+
+              {/* Finanzas Card */}
+              <div className="bg-slate-50/80 rounded-2xl p-4 space-y-4 border border-sand/20">
+                <div className="flex justify-between items-end">
+                    <div>
+                        <p className="text-[9px] text-muted font-bold uppercase tracking-tight mb-1">Ventas Brutas</p>
+                        <p className="text-lg font-bold text-primary leading-none">S/ {seller.grossVolume.toLocaleString()}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9px] text-muted font-bold uppercase tracking-tight mb-1 text-[#008F6A]">Billetera Disponible</p>
+                        <p className="text-lg font-bold text-[#008F6A] leading-none">S/ {seller.availableBalance.toLocaleString()}</p>
+                    </div>
+                </div>
+
+                {seller.pendingBalance > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-100">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        <p className="text-[9px] text-amber-700 font-bold uppercase tracking-tighter">
+                            S/ {seller.pendingBalance.toLocaleString()} en garantía (Escrow)
+                        </p>
+                    </div>
+                )}
+
+                {seller.disputedAmount > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-xl border border-red-100">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        <p className="text-[9px] text-red-700 font-bold uppercase tracking-tight">
+                            S/ {seller.disputedAmount.toLocaleString()} Retenido por disputa
+                        </p>
+                    </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {(!processedSellers || processedSellers.length === 0) && (
+            <div className="px-8 py-20 text-center text-muted italic text-sm">
+              No se encontraron vendedores registrados.
+            </div>
+          )}
         </div>
       </div>
     </div>

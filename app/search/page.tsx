@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { Navbar } from "@/components/ui/Navbar";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { FilterSidebar } from "@/components/product/FilterSidebar";
+import { MobileFilterToggle } from "@/components/product/MobileFilterToggle";
 import React, { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -96,10 +97,13 @@ export default async function SearchPage({
 
         <div className="flex flex-col lg:grid lg:grid-cols-[240px_1fr] gap-12 lg:gap-20">
           <Suspense fallback={<div className="h-64 bg-sand/10 rounded-3xl animate-pulse" />}>
-            <FilterSidebar />
+            <FilterSidebar className="hidden lg:block space-y-10 lg:sticky lg:top-24 h-fit" />
           </Suspense>
 
           <div className="space-y-10">
+            <Suspense fallback={null}>
+              <MobileFilterToggle />
+            </Suspense>
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted border-b border-sand pb-4">
               <span>{products?.length || 0} prendas en el mercado</span>
             </div>

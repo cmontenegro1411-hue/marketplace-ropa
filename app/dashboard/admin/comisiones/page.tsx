@@ -74,7 +74,7 @@ export default async function AdminCommissionsPage() {
             <span className="w-1 h-1 rounded-full bg-primary" />
             Comisiones por Ventas
           </p>
-          <p className="text-5xl font-serif font-bold text-primary tracking-tighter">
+          <p className="text-3xl lg:text-5xl font-serif font-bold text-primary tracking-tighter">
             S/ {salesCommissions.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
           </p>
           <div className="mt-6 flex items-center gap-3">
@@ -95,7 +95,7 @@ export default async function AdminCommissionsPage() {
             <span className="w-1 h-1 rounded-full bg-accent" />
             Venta de Créditos IA
           </p>
-          <p className="text-5xl font-serif font-bold text-accent tracking-tighter">
+          <p className="text-3xl lg:text-5xl font-serif font-bold text-accent tracking-tighter">
             S/ {aiRevenue.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
           </p>
           <div className="mt-6 flex items-center gap-3">
@@ -112,7 +112,7 @@ export default async function AdminCommissionsPage() {
             <Wallet className="w-32 h-32 text-cream" />
           </div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-cream/60 mb-4">Ingreso Total Neto</p>
-          <p className="text-5xl font-serif font-bold text-cream tracking-tighter">
+          <p className="text-3xl lg:text-5xl font-serif font-bold text-cream tracking-tighter">
             S/ {totalRealRevenue.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
           </p>
           <div className="mt-8 pt-6 border-t border-cream/10">
@@ -145,7 +145,7 @@ export default async function AdminCommissionsPage() {
           </div>
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/20">
@@ -208,6 +208,54 @@ export default async function AdminCommissionsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Vista Móvil (Cards) */}
+        <div className="lg:hidden divide-y divide-sand/20">
+          {revenue?.map((row: any) => (
+            <div key={row.id} className="p-6 space-y-4 hover:bg-slate-50/50 transition-colors">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-bold text-primary">{row.users?.name || 'Sistema'}</p>
+                  <p className="text-[10px] text-muted font-medium">{row.users?.email || 'N/A'}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm font-bold font-serif text-primary">S/ {Number(row.amount).toFixed(2)}</p>
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-widest mt-0.5">Monto Neto</p>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-sand/10">
+                <div className="flex flex-col gap-1">
+                    <span className="text-[9px] text-muted font-bold uppercase tracking-tight">Tipo de Ingreso</span>
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest w-fit ${
+                      row.type === 'sales_commission' 
+                      ? 'bg-[#00E0A6]/10 text-[#008F6A]' 
+                      : 'bg-accent/10 text-accent'
+                    }`}>
+                      {row.type === 'sales_commission' ? 'Comisión Venta' : 'Venta Créditos'}
+                    </span>
+                </div>
+                <div className="text-right flex flex-col gap-1">
+                    <span className="text-[9px] text-muted font-bold uppercase tracking-tight">Referencia</span>
+                    <code className="text-[9px] bg-white px-2 py-0.5 rounded border border-sand/20 font-mono text-slate-500">
+                        {row.reference_id?.slice(0, 10)}...
+                    </code>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center text-[10px] text-muted italic">
+                <p>{new Date(row.created_at).toLocaleDateString('es-PE')}</p>
+                <p>{new Date(row.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+            </div>
+          ))}
+
+          {(!revenue || revenue.length === 0) && (
+            <div className="px-8 py-20 text-center text-muted italic text-sm">
+              No se han registrado ingresos todavía.
+            </div>
+          )}
         </div>
       </div>
     </div>

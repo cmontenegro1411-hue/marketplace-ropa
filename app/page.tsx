@@ -42,13 +42,13 @@ export default async function Home() {
                 <span className="text-secondary font-bold tracking-[0.5em] uppercase text-[9px]">Sustainable • Editorial • Luxury</span>
               </div>
               
-              <h1 className="text-7xl md:text-[11rem] font-serif font-bold text-primary leading-[0.85] tracking-tighter mb-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
+              <h1 className="text-5xl md:text-7xl lg:text-[11rem] font-serif font-bold text-primary leading-[0.85] tracking-tighter mb-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
                 Reinventa <br />
                 <span className="italic font-light text-accent">tu Estilo</span>
               </h1>
               
               <div className="flex flex-col md:flex-row items-end gap-12 animate-in fade-in duration-1000 delay-500">
-                <p className="text-lg text-muted font-medium max-w-sm leading-relaxed mb-4">
+                <p className="text-base md:text-lg text-muted font-medium max-w-sm leading-relaxed mb-4">
                   Una plataforma curada donde el lujo pre-amado encuentra una nueva vida. Calidad sin compromisos.
                 </p>
                 <Link href="/search">
@@ -71,13 +71,13 @@ export default async function Home() {
         </section>
 
         {/* SECCIÓN RECIÉN LLEGADOS - PROTAGONISTA */}
-        <section className="py-32 bg-white">
+        <section className="py-16 md:py-32 bg-white">
           <Container>
             <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
               <div className="space-y-4 max-w-xl">
                 <div className="h-1 w-20 bg-accent"></div>
-                <h2 className="text-5xl font-serif font-bold text-primary tracking-tight">Recién Llegados</h2>
-                <p className="text-base text-muted font-medium leading-relaxed italic">Cada pieza es seleccionada mano a mano para asegurar los más altos estándares de autenticidad y condición.</p>
+                <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary tracking-tight">Recién Llegados</h2>
+                <p className="text-sm md:text-base text-muted font-medium leading-relaxed italic">Cada pieza es seleccionada mano a mano para asegurar los más altos estándares de autenticidad y condición.</p>
               </div>
               <Link href="/search" className="group flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-colors">
                 Ver Colección Completa 
@@ -111,11 +111,11 @@ export default async function Home() {
         </section>
 
         {/* CATEGORÍAS RÁPIDAS - CURADAS */}
-        <section className="py-32 bg-cream/40 overflow-hidden">
+        <section className="py-16 md:py-32 bg-cream/40 overflow-hidden">
           <Container>
             <div className="text-center mb-20">
                <h3 className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted mb-4">Curaduría por Estilo</h3>
-               <h2 className="text-5xl font-serif font-bold text-primary">Nuestras Categorías</h2>
+               <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary">Nuestras Categorías</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {[

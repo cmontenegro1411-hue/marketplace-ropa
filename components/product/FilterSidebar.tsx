@@ -3,7 +3,15 @@
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export const FilterSidebar = () => {
+export const FilterSidebar = ({ className = "" }: { className?: string }) => {
+  return (
+    <aside className={className}>
+      <FilterContent />
+    </aside>
+  );
+};
+
+export const FilterContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -28,7 +36,7 @@ export const FilterSidebar = () => {
   const conditions = ['Nuevo con etiqueta', 'Muy buen estado', 'Buen estado', 'Usado'];
 
   return (
-    <aside className="space-y-10 lg:sticky lg:top-24 h-fit">
+    <div className="space-y-10">
       <div>
         <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-6">Público</h3>
         <div className="space-y-3">
@@ -100,6 +108,6 @@ export const FilterSidebar = () => {
           Limpiar todos los filtros
         </button>
       )}
-    </aside>
+    </div>
   );
 };

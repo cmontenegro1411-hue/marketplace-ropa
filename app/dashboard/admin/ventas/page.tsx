@@ -32,7 +32,8 @@ export default async function AdminSalesPage() {
       </div>
 
       <div className="bg-white rounded-[2.5rem] editorial-shadow border border-sand/50 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Vista Desktop */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-sand/30">
@@ -184,6 +185,93 @@ export default async function AdminSalesPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Vista Móvil (Cards) */}
+        <div className="lg:hidden divide-y divide-sand/20">
+          {orders?.map((order: any) => {
+             const effectiveTotal = order.order_items?.reduce((sum: number, item: any) => {
+               if (item.status !== 'refunded' && item.status !== 'cancelled') {
+                 return sum + (item.price || 0);
+               }
+               return sum;
+             }, 0) || 0;
+
+             return (
+               <div key={order.id} className="p-6 space-y-6">
+                 {/* Header Orden */}
+                 <div className="flex justify-between items-start">
+                   <div>
+                     <p className="text-[10px] font-bold text-primary mb-1 uppercase tracking-tighter">ORDEN #{order.id.substring(0, 8)}</p>
+                     <p className="text-[10px] text-muted font-medium italic">
+                       {new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                     </p>
+                   </div>
+                   {(() => {
+                        const allRefunded = order.payment_status === 'refunded' || (order.order_items?.length > 0 && order.order_items?.every((it: any) => it.status === 'refunded' || it.status === 'cancelled'));
+                        const hasDispute = order.order_items?.some((it: any) => it.status === 'disputed');
+                        const isPending = order.payment_status === 'completed' && order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped');
+
+                        if (allRefunded) return <span className="text-[8px] font-bold bg-red-50 text-red-500 px-2 py-1 rounded-full border border-red-100 uppercase tracking-widest">Reembolsado</span>;
+                        if (hasDispute) return <span className="text-[8px] font-bold bg-orange-50 text-orange-600 px-2 py-1 rounded-full border border-orange-100 uppercase tracking-widest">Disputa</span>;
+                        if (isPending) return <span className="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-full border border-blue-100 uppercase tracking-widest">En Camino</span>;
+                        if (order.payment_status === 'completed') return <span className="text-[8px] font-bold bg-[#00E0A6]/10 text-[#008F6A] px-2 py-1 rounded-full uppercase tracking-widest">OK</span>;
+                        return <span className="text-[8px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full uppercase tracking-widest">Pend.</span>;
+                   })()}
+                 </div>
+
+                 {/* Cliente */}
+                 <div className="bg-slate-50/50 rounded-2xl p-4 border border-sand/20">
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-tight mb-2">Comprador</p>
+                    <p className="text-sm font-bold text-primary">{order.buyer_name}</p>
+                    <div className="flex gap-4 mt-1">
+                        <p className="text-[10px] text-muted font-medium">{order.buyer_email}</p>
+                        <p className="text-[10px] text-muted font-medium">{order.buyer_phone}</p>
+                    </div>
+                 </div>
+
+                 {/* Items */}
+                 <div className="space-y-3">
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-tight">Artículos</p>
+                    {order.order_items?.map((item: any) => (
+                        <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-sand/10 shadow-sm">
+                            <div className="max-w-[70%]">
+                                <p className="text-[11px] font-bold text-primary leading-tight">
+                                    {item.products?.brand} {item.products?.title}
+                                </p>
+                                <p className="text-[9px] text-accent font-bold uppercase tracking-tighter mt-0.5">
+                                    Vend. {item.products?.users?.name || '??'}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs font-bold text-primary leading-none">S/ {item.price}</p>
+                                {item.status === 'refunded' && <p className="text-[8px] text-red-500 font-bold uppercase mt-1">Ref.</p>}
+                                {item.status === 'disputed' && <p className="text-[8px] text-orange-500 font-bold uppercase mt-1">Disp.</p>}
+                            </div>
+                        </div>
+                    ))}
+                 </div>
+
+                 {/* Footer Card: Totales */}
+                 <div className="flex justify-between items-center pt-4 border-t border-sand/20">
+                    <div>
+                        <p className="text-[9px] text-muted font-bold uppercase tracking-tight leading-none mb-1">Monto Neto</p>
+                        <p className="text-xl font-serif font-bold text-accent leading-none">S/ {effectiveTotal}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9px] text-muted font-bold uppercase tracking-tight mb-1">Fee Transac.</p>
+                        <p className="text-xs font-bold text-primary">S/ {order.mp_application_fee || '0.00'}</p>
+                    </div>
+                 </div>
+               </div>
+             );
+          })}
+
+          {(!orders || orders.length === 0) && (
+            <div className="px-8 py-20 text-center text-muted italic text-sm">
+              No hay registros de ventas todavía.
+            </div>
+          )}
         </div>
       </div>
     </div>

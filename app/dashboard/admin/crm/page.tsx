@@ -130,9 +130,9 @@ export default async function AdminCRMPage() {
       
 
       {/* Grid de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-8 rounded-[2rem] editorial-shadow border border-sand/50 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 text-sand/20 group-hover:text-accent/10 transition-colors">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-white p-6 md:p-8 rounded-[2rem] editorial-shadow border border-sand/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 text-sand/20 group-hover:text-accent/10 transition-colors hidden sm:block">
             <TrendingUp size={80} />
           </div>
           <div className="relative z-10">
@@ -140,13 +140,13 @@ export default async function AdminCRMPage() {
               <TrendingUp size={20} />
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Ventas Netas</span>
             </div>
-            <div className="text-4xl font-serif font-bold text-primary">S/ {totalSalesValue.toLocaleString()}</div>
+            <div className="text-3xl md:text-4xl font-serif font-bold text-primary">S/ {totalSalesValue.toLocaleString()}</div>
             <p className="text-[10px] text-muted mt-2 font-bold uppercase tracking-tight">Histórico Total</p>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] editorial-shadow border border-sand/50 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 text-sand/20 group-hover:text-primary/10 transition-colors">
+        <div className="bg-white p-6 md:p-8 rounded-[2rem] editorial-shadow border border-sand/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 text-sand/20 group-hover:text-primary/10 transition-colors hidden sm:block">
             <UserCheck size={80} />
           </div>
           <div className="relative z-10">
@@ -154,13 +154,13 @@ export default async function AdminCRMPage() {
               <UsersIcon size={20} />
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Vendedores Activos</span>
             </div>
-            <div className="text-4xl font-serif font-bold text-primary">{sellerCount || 0}</div>
+            <div className="text-3xl md:text-4xl font-serif font-bold text-primary">{sellerCount || 0}</div>
             <p className="text-[10px] text-muted mt-2 font-bold uppercase tracking-tight">Total en plataforma</p>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] editorial-shadow border border-sand/50 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 text-sand/20 group-hover:text-[#C2A58F]/10 transition-colors">
+        <div className="bg-white p-6 md:p-8 rounded-[2rem] editorial-shadow border border-sand/50 relative overflow-hidden group sm:col-span-2 md:col-span-1">
+          <div className="absolute top-0 right-0 p-8 text-sand/20 group-hover:text-[#C2A58F]/10 transition-colors hidden sm:block">
             <Clock size={80} />
           </div>
           <div className="relative z-10">
@@ -168,41 +168,41 @@ export default async function AdminCRMPage() {
               <Clock size={20} />
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Items en Escrow</span>
             </div>
-            <div className="text-4xl font-serif font-bold text-primary">{pendingOrdersCount || 0}</div>
+            <div className="text-3xl md:text-4xl font-serif font-bold text-primary">{pendingOrdersCount || 0}</div>
             <p className="text-[10px] text-muted mt-2 font-bold uppercase tracking-tight">Por confirmar recibo</p>
           </div>
         </div>
       </div>
 
       {/* Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Ranking Vendedores */}
-        <div className="bg-white p-8 rounded-[2.5rem] editorial-shadow border border-sand/50">
-          <div className="flex items-center justify-between mb-8">
+        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] editorial-shadow border border-sand/50">
+          <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-accent/10 text-accent rounded-2xl flex items-center justify-center">
                 <Award size={20} />
               </div>
               <h2 className="text-xl font-serif font-bold text-primary">Top Vendedores</h2>
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-widest text-muted bg-sand/20 px-3 py-1 rounded-full">Por Volumen</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted bg-sand/20 px-3 py-1 rounded-full hidden sm:block">Por Volumen</span>
           </div>
 
           <div className="space-y-4">
             {sellerRanking.length > 0 ? sellerRanking.map((s, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-sand/20 hover:bg-white transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className="text-lg font-serif font-bold text-sand group-hover:text-accent transition-colors w-6">
+              <div key={i} className="flex items-center justify-between p-3 md:p-4 bg-slate-50/50 rounded-2xl border border-sand/20 hover:bg-white transition-all group">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="text-lg font-serif font-bold text-sand group-hover:text-accent transition-colors w-5 md:w-6">
                     {i + 1}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-primary uppercase tracking-tight">{s.name}</p>
-                    <p className="text-[10px] text-muted font-medium">{s.items} prendas vendidas</p>
+                    <p className="text-sm font-bold text-primary uppercase tracking-tight line-clamp-1">{s.name}</p>
+                    <p className="text-[10px] text-muted font-medium">{s.items} prendas</p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right whitespace-nowrap">
                   <p className="text-sm font-bold text-accent">S/ {s.total.toLocaleString()}</p>
-                  <div className="flex items-center gap-1 justify-end text-[9px] font-bold text-[#008F6A] uppercase tracking-tighter">
+                  <div className="hidden sm:flex items-center gap-1 justify-end text-[9px] font-bold text-[#008F6A] uppercase tracking-tighter">
                     <ArrowUpRight size={10} />
                     Rendimiento
                   </div>
@@ -215,32 +215,32 @@ export default async function AdminCRMPage() {
         </div>
 
         {/* Ranking Compradores */}
-        <div className="bg-white p-8 rounded-[2.5rem] editorial-shadow border border-sand/50">
-          <div className="flex items-center justify-between mb-8">
+        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] editorial-shadow border border-sand/50">
+          <div className="flex items-center justify-between mb-6 md:mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
                 <ShoppingBag size={20} />
               </div>
               <h2 className="text-xl font-serif font-bold text-primary">Top Compradores</h2>
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-widest text-muted bg-sand/20 px-3 py-1 rounded-full">Por Gasto</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted bg-sand/20 px-3 py-1 rounded-full hidden sm:block">Por Gasto</span>
           </div>
 
           <div className="space-y-4">
             {buyerRanking.length > 0 ? buyerRanking.map((b, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-sand/20 hover:bg-white transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className="text-lg font-serif font-bold text-sand group-hover:text-primary transition-colors w-6">
+              <div key={i} className="flex items-center justify-between p-3 md:p-4 bg-slate-50/50 rounded-2xl border border-sand/20 hover:bg-white transition-all group">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="text-lg font-serif font-bold text-sand group-hover:text-primary transition-colors w-5 md:w-6">
                     {i + 1}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-primary uppercase tracking-tight">{b.name}</p>
-                    <p className="text-[10px] text-muted font-medium">{b.orders} pedidos realizados</p>
+                    <p className="text-sm font-bold text-primary uppercase tracking-tight line-clamp-1">{b.name}</p>
+                    <p className="text-[10px] text-muted font-medium">{b.orders} pedidos</p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right whitespace-nowrap">
                   <p className="text-sm font-bold text-primary">S/ {b.total.toLocaleString()}</p>
-                  <p className="text-[9px] text-muted font-bold uppercase tracking-tighter">Gasto Total</p>
+                  <p className="text-[9px] text-muted font-bold uppercase tracking-tighter hidden sm:block">Gasto Total</p>
                 </div>
               </div>
             )) : (

@@ -7,8 +7,10 @@ import {
   BarChart3, 
   ArrowLeft,
   ShieldCheck,
-  Banknote
+  Banknote,
+  LayoutDashboard
 } from "lucide-react";
+import { AdminMobileNav } from "./AdminMobileNav";
 
 export default async function AdminLayout({
   children,
@@ -22,10 +24,17 @@ export default async function AdminLayout({
     redirect("/dashboard");
   }
 
+  const navItems = [
+    { href: "/dashboard/admin/crm", label: "Dashboard", icon: BarChart3 },
+    { href: "/dashboard/admin/vendedores", label: "Vendedores", icon: Users },
+    { href: "/dashboard/admin/ventas", label: "Ventas Realizadas", icon: ShoppingBag },
+    { href: "/dashboard/admin/comisiones", label: "Comisiones", icon: Banknote },
+  ];
+
   return (
     <div className="flex min-h-screen bg-slate-50/50">
-      {/* Sidebar Admin */}
-      <aside className="w-64 bg-primary text-cream fixed inset-y-0 left-0 z-50 flex flex-col shadow-2xl">
+      {/* Sidebar Admin - Desktop */}
+      <aside className="hidden lg:flex w-64 bg-primary text-cream fixed inset-y-0 left-0 z-50 flex-col shadow-2xl">
         <div className="p-8 border-b border-cream/10">
           <div className="flex items-center gap-3 mb-2">
             <ShieldCheck className="w-6 h-6 text-[#00E0A6]" />
@@ -35,34 +44,16 @@ export default async function AdminLayout({
         </div>
 
         <nav className="flex-1 p-6 space-y-2 mt-4">
-          <Link 
-            href="/dashboard/admin/crm"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
-          >
-            <BarChart3 className="w-4 h-4" />
-            Dashboard
-          </Link>
-          <Link 
-            href="/dashboard/admin/vendedores"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
-          >
-            <Users className="w-4 h-4" />
-            Vendedores
-          </Link>
-          <Link 
-            href="/dashboard/admin/ventas"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            Ventas Realizadas
-          </Link>
-          <Link 
-            href="/dashboard/admin/comisiones"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
-          >
-            <Banknote className="w-4 h-4" />
-            Comisiones
-          </Link>
+          {navItems.map((item) => (
+            <Link 
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm font-medium"
+            >
+              <item.icon className="w-4 h-4" />
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="p-6 border-t border-cream/10">
@@ -77,7 +68,10 @@ export default async function AdminLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-10">
+      <main className="flex-1 lg:ml-64 p-4 md:p-10 pb-24 lg:pb-10">
+        <div className="lg:hidden mb-8">
+            <AdminMobileNav items={navItems} />
+        </div>
         <div className="max-w-6xl mx-auto">
           {children}
         </div>
