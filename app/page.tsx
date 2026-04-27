@@ -15,6 +15,7 @@ export default async function Home() {
       const { data } = await supabase
         .from('products')
         .select('*')
+        .eq('status', 'available')
         .order('created_at', { ascending: false })
         .limit(4);
       return data || [];

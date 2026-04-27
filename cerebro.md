@@ -2,13 +2,13 @@
 
 ## 0. METADATA Y ESTADO DEL SISTEMA
 
-- **Versión Actual:** 1.7.7
-- **Fase de Desarrollo:** Refinamiento de Billetera Virtual, Auditoría de Transacciones (Escrow Centralizado) y estabilización de UI.
+- **Versión Actual:** 1.8.1
+- **Fase de Desarrollo:** Marketplace Filter Optimization, Categorización Dual y Despliegue en Producción.
 - **Directiva del Orquestador:** Este documento es la única fuente de verdad absoluta. Se prohíbe cualquier implementación que contradiga este flujo.
 
-## 1. ARQUITECTURA Y REGLAS GLOBALES (Actualizado v1.7.2)
+## 1. ARQUITECTURA Y REGLAS GLOBALES (Actualizado v1.8.1)
 
-- **Stack:** Next.js 14/16 (App Router), Supabase (PostgreSQL), Mercado Pago SDK, NextAuth v5, Brevo.
+- **Stack:** Next.js 14/16 (App Router), Supabase (PostgreSQL), Mercado Pago SDK, NextAuth v5, Brevo, Vercel.
 - **Modelo de Negocio:**
   1. **Registro Vendedor:** Gratuito.
   2. **Monetización (Créditos IA):** La IA para creación de listings se maneja con créditos. El registro otorga un paquete inicial gratis. Agotados estos, el vendedor compra más. Se manejan en la tabla independiente `listing_credits`.
@@ -42,32 +42,39 @@
 
 ### 3.1 Base de Datos (Supabase)
 
+- **Categorización Dual (`Segment | Type`):** Los productos utilizan un formato de cadena separada por pipes en la columna `category` (ej: `Mujer | Ropa`, `Unisex | Calzado`). Esto permite búsquedas granulares sin necesidad de múltiples columnas de categorías.
 - **Saldos:** NUNCA alterar `balance_pending` o `balance_available` manualmente vía queries simples (`.update()`). Siempre usar las funciones RPC (`capture_escrow_funds`, `release_escrow_funds`) para garantizar que se genere el registro de auditoría en `wallet_transactions`.
 - **Créditos:** Gestionados en la tabla `listing_credits`. Nunca buscar la columna `ia_credits` dentro de `users`.
 - **Mercado Pago:** Nunca buscar `mp_access_token` en `users` ya que la plataforma usa Escrow Centralizado (solo se usa el token global del `.env`).
 
 ### 3.2 Frontend (Next.js App Router)
 
-- **Caché:** Next.js es muy agresivo cacheando peticiones `fetch` (método que usa Supabase internamente). Cualquier página que muestre transacciones o saldos financieros (como el Dashboard o Perfil) debe usar `export const fetchCache = 'force-no-store'` en la raíz de la ruta para garantizar datos reales, o revalidaciones rigurosas (`revalidatePath`).
-- **UI de Billetera:** Las transacciones en el frontend deben agruparse por `order_item_id`. Aunque la BD tenga filas separadas para `capture` y `release`, la vista las fusiona mostrando un solo registro con columnas "Retenido" y "Liberado" para simplificar la información al vendedor.
-- **UI de Productos:** Las tarjetas de producto muestran el listón de "Reservado" (full-overlay inclinado en el centro) cuando el estado es `reserved`, y cambian automáticamente al mismo formato pero con "Vendido" cuando es `sold`.
-- **Enlaces de Email:** Siempre generar y decodificar los tokens de correo con `base64url` (no `base64` estándar) para evitar que caracteres inválidos como `+` o `/` rompan el link en los navegadores de los clientes de correo.
+- **Lógica de Filtros (Segmentos vs Tipos):** 
+  - Las búsquedas por segmento desde el Navbar (Mujer, Hombre, Niños) son **estrictas** para mantener la UI limpia.
+  - Las búsquedas combinadas (ej. `Hombre + Calzado`) utilizan inclusión dinámica de `Unisex` para no ocultar opciones válidas (como zapatillas unisex).
+  - Los accesorios puramente femeninos (Aretes, Bolsos de mano) deben estar categorizados como `Mujer` para evitar ruido en filtros masculinos.
+- **Caché:** Next.js es muy agresivo cacheando peticiones `fetch`. Dashboards y Perfiles deben usar `export const fetchCache = 'force-no-store'` o `revalidatePath`.
+- **UI de Billetera:** Las transacciones se agrupan por `order_item_id`. La vista fusiona `capture` y `release` en un solo registro con columnas de estado financiero.
+- **UI de Productos:** Listones de "Reservado" y "Vendido" automáticos basados en el `status`. La sección **"Recién Llegados"** (Home) debe filtrar estrictamente por `status: 'available'` para no mostrar artículos ya vendidos.
+- **Enlaces de Email:** Uso obligatorio de `base64url` para tokens.
 
 ## 4. DICCIONARIO DE DATOS ESTRATÉGICOS
 
-- **`users`:** `{ id, email, balance_pending, balance_available, role }` (Ya no existe integración MP individual).
-- **`wallet_transactions`:** `{ id, user_id, type ('capture', 'release', 'withdrawal', 'refund'), amount, balance_after_pending, balance_after_available, created_at }`. Tabla inmutable para auditoría financiera de cada vendedor.
+- **`users`:** `{ id, email, balance_pending, balance_available, role }`.
+- **`wallet_transactions`:** `{ id, user_id, type, amount, balance_after_pending, balance_after_available, created_at }`.
 - **`listing_credits`:** `{ id, user_id, plan, credits_total, credits_used }`.
-- **`products`:** `{ id, status ('available', 'reserved', 'sold', 'shipped'), price, conformity_token }`.
+- **`products`:** `{ id, status ('available', 'reserved', 'sold', 'shipped'), price, category ('Segment | Type'), conformity_token }`.
 - **`order_items`:** `{ id, order_id, product_id, seller_id, payout_amount, status }`.
 
 ## 5. CHANGELOG
 
-- **[24-04-2026] - v1.7.7:** Optimización final de UX en Checkout: Eliminación de mensajes de carga redundantes ("Preparando pasarela..." y "Cargando confirmación...") para una transición fluida y silenciosa. Se simplificó el fallback de Suspense a un indicador visual minimalista.
-- **[24-04-2026] - v1.7.6:** Mejora de UX en Checkout: Implementación inicial de soft navigation (`useRouter`) para eliminar parpadeos durante el procesamiento de pagos.
-- **[24-04-2026] - v1.7.5:** Optimización del Dashboard CRM Admin. Se ajustó el cálculo de "Ventas Realizadas" para excluir explícitamente órdenes reembolsadas (`payment_status = 'refunded'`). Se mejoró la visualización de estados en la actividad reciente (Pagado, Devuelto, En Disputa, En Tránsito) para mayor precisión operativa.
-- **[24-04-2026] - v1.7.4:** Implementación de lógica de reembolso híbrida. El sistema ahora detecta órdenes en modo "Bypass" (sin `mp_payment_id`) y permite completar el flujo de retorno y reversión de fondos interna (`revert_escrow_funds`) sin fallar por falta de integración con Mercado Pago. Esto estabiliza el entorno de pruebas y despliegues en Vercel para validaciones de fin de flujo.
-- **[23-04-2026] - v1.7.3:** Estabilización de notificaciones por correo en producción. Configuración de variables de entorno de Brevo en Vercel. Corrección de `NEXT_PUBLIC_SITE_URL` para enlaces funcionales de confirmación y devolución. Refactorización de `completePurchase` para mayor resiliencia ante errores de base de datos.
-- **[22-04-2026] - v1.7.2:** Actualización del modelo Escrow a **Centralizado con Billetera Virtual**. Se eliminan las integraciones individuales de Mercado Pago. Implementación de RPCs atómicos para control de saldos y auditoría. Corrección de caché de Next.js en el frontend. Enlaces email a `base64url`.
-- **[22-04-2026] - v1.7.0:** Reestructuración profunda. Registro gratuito. Créditos IA independizados. Escrow a 72h.
+- **[27-04-2026] - v1.8.1:** Optimización de visibilidad en Home. Se implementó filtro estricto de artículos disponibles para la sección de 'Recién Llegados', eliminando ruido visual de productos ya vendidos.
+- **[25-04-2026] - v1.8.0:** Marketplace Optimization & Deployment. Migración masiva de productos al nuevo sistema de categorías dual (`Segment | Type`). Refactorización de la lógica de búsqueda en `SearchPage` para manejar inclusión inteligente de productos Unisex. Corrección de clasificación de accesorios femeninos (Aretes/Bolsos). Despliegue exitoso en producción vía Vercel con configuración completa de variables de entorno.
+- **[24-04-2026] - v1.7.7:** Optimización final de UX en Checkout: Eliminación de mensajes de carga redundantes. Se simplificó el fallback de Suspense a un indicador visual minimalista.
+- **[24-04-2026] - v1.7.6:** Mejora de UX en Checkout: Implementación de soft navigation (`useRouter`) para eliminar parpadeos.
+- **[24-04-2026] - v1.7.5:** Optimización del Dashboard CRM Admin. Ajuste en cálculo de ventas reales y estados de actividad reciente.
+- **[24-04-2026] - v1.7.4:** Lógica de reembolso híbrida para entornos de prueba (modo "Bypass").
+- **[23-04-2026] - v1.7.3:** Estabilización de notificaciones por correo en producción. Configuración de variables Brevo en Vercel.
+- **[22-04-2026] - v1.7.2:** Actualización del modelo Escrow a **Centralizado**. Eliminación de integraciones MP individuales. RPCs atómicos.
+- **[22-04-2026] - v1.7.0:** Reestructuración profunda. Registro gratuito. Créditos IA. Escrow a 72h.
 - **[Previo]:** Eliminación flujos Pay-First.
