@@ -77,6 +77,7 @@ export const Navbar = () => {
             <Link href="/search?cat=Mujer" className="hover:text-primary transition-colors">Mujer</Link>
             <Link href="/search?cat=Hombre" className="hover:text-primary transition-colors">Hombre</Link>
             <Link href="/search?cat=Ni%C3%B1os" className="hover:text-primary transition-colors">Niños</Link>
+            <Link href="/search?cat=Unisex" className="hover:text-primary transition-colors">Unisex</Link>
           </div>
         )}
 
