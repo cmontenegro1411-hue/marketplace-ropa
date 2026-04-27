@@ -50,7 +50,6 @@ export const AdminMobileNav = ({ items }: { items: NavItem[] }) => {
         >
           <Menu className="w-5 h-5 text-primary" />
         </button>
-        </button>
       </div>
     </div>
 
