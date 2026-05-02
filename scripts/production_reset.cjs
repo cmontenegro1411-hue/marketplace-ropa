@@ -12,7 +12,8 @@ async function finalReset() {
       'order_items', 
       'orders', 
       'wallet_transactions', 
-      'ai_generations_log'
+      'ai_generations_log',
+      'product_reviews'
     ];
 
     for (const table of tablesToEmpty) {

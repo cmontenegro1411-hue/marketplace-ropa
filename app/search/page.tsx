@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ui/ProductCard";
 import { FilterSidebar } from "@/components/product/FilterSidebar";
 import { MobileFilterToggle } from "@/components/product/MobileFilterToggle";
 import React, { Suspense } from 'react';
+import { getSellersReputations } from "@/app/actions/reputation-actions";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ export default async function SearchPage({
   const type = resolvedParams.type as string; // Nuevo: Tipo de producto (Ropa, Calzado, etc)
   const condition = resolvedParams.cond as string;
   const query = resolvedParams.q as string;
+  const sellerId = resolvedParams.seller as string;
 
   // 1. Detección de columnas para evitar fallos catastróficos
   const { data: sample } = await supabase.from('products').select('*').limit(1);
@@ -34,12 +36,11 @@ export default async function SearchPage({
   // Filtros dinámicos de Segmento (Mujer, Hombre, Niños)
   if (category) {
     if (hasCategorySingular) {
-      // Si se busca un segmento específico (Mujer, Hombre, Niños)
-      if (category !== 'Unisex' && type) {
-        // Si hay un tipo seleccionado (ej. Calzado), incluimos Unisex para no ocultar opciones válidas
+      // Si el segmento es Hombre o Mujer, incluimos Unisex automáticamente según requerimiento de negocio
+      if (category === 'Hombre' || category === 'Mujer') {
         dbQuery = dbQuery.or(`category.ilike.%${category}%,category.ilike.%Unisex%`);
       } else {
-        // Si solo se filtra por segmento desde la cabecera, mantenemos el resultado estricto
+        // Para Unisex explícito, Niños u otros segmentos específicos
         dbQuery = dbQuery.ilike('category', `%${category}%`);
       }
     } else if (hasCategoriesPlural) {
@@ -57,6 +58,10 @@ export default async function SearchPage({
   // Filtro de Condición
   if (condition && columns.includes('condition')) {
     dbQuery = dbQuery.eq('condition', condition);
+  }
+  
+  if (sellerId) {
+    dbQuery = dbQuery.eq('seller_id', sellerId);
   }
 
   // BÚSQUEDA MULTICANAL (Título, Marca, Descripción)
@@ -80,6 +85,10 @@ export default async function SearchPage({
   if (error) {
     console.error("Error en búsqueda:", error.message);
   }
+
+  // 3. Obtener reputaciones de vendedores en lote
+  const sellerIds = products ? [...new Set(products.map(p => p.seller_id))].filter(Boolean) as string[] : [];
+  const reputations = await getSellersReputations(sellerIds);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -121,6 +130,8 @@ export default async function SearchPage({
                     size={p.size}
                     imageUrl={p.images?.[0] || '/placeholder-product.png'}
                     status={p.status}
+                    sellerRating={reputations[p.seller_id]?.rating}
+                    sellerReviewCount={reputations[p.seller_id]?.reviewCount}
                   />
                 ))}
               </div>

@@ -54,6 +54,10 @@ REGLAS CRÍTICAS:
 1. Una prenda usada NUNCA puede ser más cara que su versión 'nuevo_con_etiqueta'.
 2. NUNCA devuelvas un precio sugerido de 0. El mínimo es S/5.
 3. Si la marca no es visible, clasifícala como "Genérico" (Tier 1).
+4. CLASIFICACIÓN DE GÉNERO (MUY IMPORTANTE): El 90% de la ropa en esta plataforma es de "Mujer" u "Hombre". ESTÁ PROHIBIDO usar "Unisex" por defecto.
+   - Usa "Mujer" para blusas, faldas, vestidos, tops, tacones, carteras, y ropa con corte femenino.
+   - Usa "Hombre" para camisas masculinas, pantalones de traje, etc.
+   - Usa "Unisex" ÚNICAMENTE para accesorios neutros (gorras, mochilas lisas) o ropa deportiva sin forma (ej. buzos holgados neutros). Ante cualquier duda o prenda de uso general, clasifícala como "Mujer" u "Hombre" observando el corte, pero no "Unisex".
 
 FORMATO DE RESPUESTA JSON REQUERIDO:
 {

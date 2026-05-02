@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
 import { redirect } from 'next/navigation';
+import { SellerLocationForm } from '@/components/profile/SellerLocationForm';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -33,12 +34,15 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
   // Fetch real User Balance
   const { data: userData } = await supabaseAdmin
     .from('users')
-    .select('balance_pending, balance_available')
+    .select('balance_pending, balance_available, ubigeo_code, address, shipping_rates')
     .eq('id', session.user.id)
     .single();
 
   const balancePending = userData?.balance_pending || 0;
   const balanceAvailable = userData?.balance_available || 0;
+  const currentUbigeo = userData?.ubigeo_code || '';
+  const currentAddress = userData?.address || '';
+  const currentShippingRates = (userData?.shipping_rates as any) || { local: 0, regional: 15, national: 25 };
 
   // Fetch detailed Order Items (Sales)
   const { data: salesItems } = await supabaseAdmin
@@ -102,6 +106,12 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
             className={`whitespace-nowrap pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'security' ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-primary'}`}
           >
             Seguridad & Alertas
+          </Link>
+          <Link 
+            href="/profile/settings?tab=shop"
+            className={`whitespace-nowrap pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'shop' ? 'text-primary border-b-2 border-primary' : 'text-muted hover:text-primary'}`}
+          >
+            Mi Tienda
           </Link>
         </div>
 
@@ -274,6 +284,50 @@ export default async function SettingsAndReportsPage(props: { searchParams: Prom
               <p className="text-muted max-w-md mx-auto">
                 Aquí podrás cambiar tu contraseña, configurar la autenticación en dos pasos y gestionar tus notificaciones por email.
               </p>
+            </div>
+          )}
+
+          {/* SHOP TAB */}
+          {activeTab === 'shop' && (
+            <div className="animate-fade-in space-y-8">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-serif font-bold text-primary">Configuración de Tienda</h2>
+              </div>
+              
+              <div className="max-w-2xl mx-auto">
+                <SellerLocationForm 
+                  currentUbigeo={currentUbigeo} 
+                  currentAddress={currentAddress}
+                  currentRates={currentShippingRates}
+                />
+              </div>
+
+              <div className="bg-cream/50 rounded-3xl p-8 border border-sand/30">
+                <h4 className="font-bold text-primary mb-4 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  Cómo funcionan tus tarifas
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-4 bg-white rounded-2xl border border-sand">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Local</p>
+                    <p className="text-xs text-muted mb-2">Mismo distrito</p>
+                    <p className="text-lg font-serif font-bold text-primary">S/ {currentShippingRates.local || 0}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-2xl border border-sand">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Regional</p>
+                    <p className="text-xs text-muted mb-2">Mismo departamento</p>
+                    <p className="text-lg font-serif font-bold text-primary">S/ {currentShippingRates.regional || 15}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-2xl border border-sand">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Nacional</p>
+                    <p className="text-xs text-muted mb-2">Resto del Perú</p>
+                    <p className="text-lg font-serif font-bold text-primary">S/ {currentShippingRates.national || 25}</p>
+                  </div>
+                </div>
+                <p className="mt-6 text-sm text-muted italic">
+                  * El sistema detecta automáticamente la ubicación del comprador y aplica la tarifa correspondiente.
+                </p>
+              </div>
             </div>
           )}
 

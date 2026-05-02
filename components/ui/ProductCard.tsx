@@ -11,7 +11,11 @@ interface ProductCardProps {
   price: number;
   imageUrl?: string;
   status?: string;
+  sellerRating?: number;
+  sellerReviewCount?: number;
 }
+
+import { ReputationStars } from '@/components/product/ReputationStars';
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   id,
@@ -21,7 +25,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   condition,
   price,
   imageUrl,
-  status
+  status,
+  sellerRating,
+  sellerReviewCount
 }) => {
   const conditionColors: { [key: string]: string } = {
     'Nuevo con etiqueta': 'bg-primary text-cream',
@@ -34,7 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const cleanTitle = title ? title.replace(/<[^>]*>?/gm, '') : 'Producto';
 
   return (
-    <Link href={`/product/${id}`} className="group cursor-pointer block card-hover">
+    <Link href={`/products/${id}`} className="group cursor-pointer block card-hover">
       <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-sand mb-4 border border-sand/50 transition-all duration-700">
         {imageUrl ? (
           <img 
@@ -85,7 +91,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <h3 className="text-base font-serif font-semibold text-primary/90 line-clamp-1 group-hover:text-accent transition-colors duration-500">
           {cleanTitle}
         </h3>
-        {size && <p className="text-[11px] text-muted font-bold uppercase tracking-widest bg-sand/40 inline-block px-2 py-0.5 rounded">Talla: {size}</p>}
+        
+        <div className="flex items-center justify-between mt-1">
+          {size && <p className="text-[11px] text-muted font-bold uppercase tracking-widest bg-sand/40 inline-block px-2 py-0.5 rounded">Talla: {size}</p>}
+          
+          {sellerReviewCount !== undefined && sellerReviewCount > 0 && (
+            <div className="flex items-center gap-1 opacity-80 scale-90 origin-right">
+              <ReputationStars rating={sellerRating || 0} />
+              <span className="text-[9px] font-bold text-muted">({sellerReviewCount})</span>
+            </div>
+          )}
+        </div>
       </div>
     </Link>
   );

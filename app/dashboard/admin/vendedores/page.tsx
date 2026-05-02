@@ -38,9 +38,9 @@ export default async function AdminSellersPage() {
   const processedSellers = sellers?.map(seller => {
     const sellerItems = orderItems?.filter(item => item.seller_id === seller.id) || [];
     
-    // Volumen Bruto: Suma de precios de items activos (lo que pagó el cliente)
+    // Volumen Bruto: Suma de precios de items CONFIRMADOS (lo que ya se liberó o está listo)
     const grossVolume = sellerItems
-      .filter(item => ['pending', 'shipped', 'completed'].includes(item.status))
+      .filter(item => item.status === 'completed')
       .reduce((sum, item) => sum + (item.price || 0), 0);
 
     // Saldo Total en Billetera (Disponible + Pendiente)

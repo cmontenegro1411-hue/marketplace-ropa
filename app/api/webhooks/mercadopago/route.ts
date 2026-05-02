@@ -20,18 +20,32 @@ export async function POST(req: NextRequest) {
 
       if (paymentData.status === 'approved') {
         const metadata = paymentData.external_reference ? JSON.parse(paymentData.external_reference) : {};
-        const { productIds } = metadata;
+        const { 
+          productIds, 
+          userId,
+          shippingFee = 0,
+          shippingName,
+          shippingAddress,
+          shippingUbigeo,
+          shippingDepartment,
+          shippingProvince,
+          shippingDistrict,
+          shippingPhone
+        } = metadata;
 
         console.log(`[Webhook MP] Pago Aprobado: ${dataId}. Productos:`, productIds);
 
         if (productIds && productIds.length > 0) {
-          // 1. Actualizar productos a 'sold' y asignar comprador info del pago
+          // 1. Actualizar productos a 'sold' y asignar comprador info del pago + envío
           const { error: prodUpdateError } = await supabaseAdmin
             .from('products')
             .update({ 
-               status: 'sold',
+               status: 'reserved',
                buyer_email: paymentData.payer?.email,
-               buyer_name: `${paymentData.payer?.first_name || ''} ${paymentData.payer?.last_name || ''}`.trim() || 'Comprador MP'
+               buyer_name: `${paymentData.payer?.first_name || ''} ${paymentData.payer?.last_name || ''}`.trim() || 'Comprador MP',
+               shipping_address: shippingAddress,
+               shipping_ubigeo: shippingUbigeo,
+               shipping_cost: Number((shippingFee / productIds.length).toFixed(2)) // Prorrateado para reportes si es necesario, aunque lo ideal es que el total coincida
             })
             .in('id', productIds);
 
@@ -49,7 +63,9 @@ export async function POST(req: NextRequest) {
             console.error("[Webhook MP] Error obteniendo detalles de productos:", fullProdError);
           }
 
-          // 2. Registrar/Actualizar Orden
+          const sellersInOrder = fullProducts ? [...new Set(fullProducts.map(p => p.seller_id))] : [];
+
+          // 2. Registrar/Actualizar Orden con datos de ENVÍO
           const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert({
@@ -58,7 +74,17 @@ export async function POST(req: NextRequest) {
               mp_payment_id: dataId,
               mp_application_fee: (paymentData as any).marketplace_fee || (paymentData as any).fee_details?.find((f: any) => f.type === 'application_fee')?.amount || 0,
               buyer_email: paymentData.payer?.email,
-              items: productIds
+              buyer_id: userId === 'guest' ? null : userId,
+              items: productIds,
+              // Nuevos campos de envío
+              shipping_name: shippingName,
+              shipping_phone: shippingPhone,
+              shipping_department: shippingDepartment,
+              shipping_province: shippingProvince,
+              shipping_district: shippingDistrict,
+              shipping_ubigeo: shippingUbigeo,
+              shipping_address: shippingAddress,
+              shipping_fee: shippingFee
             })
             .select()
             .single();
@@ -71,40 +97,52 @@ export async function POST(req: NextRequest) {
              // --- CÁLCULO DE COMISIONES (10% Plataforma + Fees MP) ---
              const totalPaid = paymentData.transaction_amount || 0;
              const totalMpFees = (paymentData as any).fee_details?.reduce((acc: number, fee: any) => {
-               // Sumamos los fees que cobra MP (no incluimos application_fee si lo hubiera porque ese es nuestro)
                if (fee.type === 'mercadopago_fee' || fee.fee_payer === 'collector') return acc + (fee.amount || 0);
                return acc;
              }, 0) || 0;
 
              // 🟢 REGISTRAR ITEMS EN ESTADO PENDIENTE (FIDEICOMISO)
-             const itemsToInsert = fullProducts?.map(p => {
-               const itemProportion = p.price / totalPaid;
-               const itemMpFee = totalMpFees * itemProportion;
-               const itemPlatformComm = p.price * 0.10;
-               const itemPayout = p.price - itemPlatformComm - itemMpFee;
+             // Agrupamos por vendedor para asignar el shipping_fee al primer item de cada vendedor
+             
+             const itemsToInsert = [];
+             for (const sId of sellersInOrder) {
+               const sellerProducts = fullProducts!.filter(p => p.seller_id === sId);
+               // Nota: En el checkout actual sumamos los envíos de cada vendedor.
+               // Para simplificar aquí, asumimos que si hay shippingFee > 0, es la suma de lo que toca a cada uno.
+               // Idealmente la metadata debería traer el desglose por seller si hay varios.
+               // Por ahora, si es un solo vendedor, le damos todo el shippingFee.
+               const isSingleSeller = sellersInOrder.length === 1;
+               const currentSellerShipping = isSingleSeller ? shippingFee : 0; // TODO: Mejorar desglose multiseller
 
-               return {
-                 order_id: order.id,
-                 product_id: p.id,
-                 seller_id: p.seller_id,
-                 price: p.price,
-                 payout_amount: Number(itemPayout.toFixed(2)),
-                 status: 'pending'
-               };
-             });
+               for (let i = 0; i < sellerProducts.length; i++) {
+                 const p = sellerProducts[i];
+                 const itemProportion = p.price / totalPaid;
+                 const itemMpFee = totalMpFees * itemProportion;
+                 const itemPlatformComm = p.price * 0.10;
+                 
+                 // El pago al vendedor es: Precio del Producto - Comisión - Fee MP + Envío (si es el primer item del seller)
+                 const itemShipping = i === 0 ? currentSellerShipping : 0;
+                 const itemPayout = p.price - itemPlatformComm - itemMpFee + itemShipping;
 
-             if (itemsToInsert && itemsToInsert.length > 0) {
-                // Primero eliminamos los items vacíos creados inicialmente si los hubiera
+                 itemsToInsert.push({
+                   order_id: order.id,
+                   product_id: p.id,
+                   seller_id: p.seller_id,
+                   price: p.price,
+                   payout_amount: Number(itemPayout.toFixed(2)),
+                   status: 'pending'
+                 });
+               }
+             }
+
+             if (itemsToInsert.length > 0) {
                 await supabaseAdmin.from('order_items').delete().eq('order_id', order.id);
-                // Insertamos los completos para el flujo de Escrow
                 const { data: savedItems, error: insertError } = await supabaseAdmin
                   .from('order_items')
                   .insert(itemsToInsert)
                   .select();
 
                 if (!insertError && savedItems) {
-                  // 💰 CAPTURAR FONDOS EN BILLETERA (Escrow)
-                  // Invocamos el RPC para cada item para tener auditoría detallada
                   for (const item of savedItems) {
                     const product = fullProducts?.find(p => p.id === item.product_id);
                     const fullTitle = product ? `${product.brand || ''} ${product.title}`.trim() : 'Producto';
@@ -116,12 +154,11 @@ export async function POST(req: NextRequest) {
                       tx_description: `Venta: ${fullTitle}`
                     });
 
-                    // 📈 REGISTRAR INGRESO PARA LA PLATAFORMA (Comisión 10%)
                     const itemPlatformComm = item.price * 0.10;
                     await supabaseAdmin.from('platform_revenue').insert({
                       amount: Number(itemPlatformComm.toFixed(2)),
                       type: 'sales_commission',
-                      user_id: item.seller_id, // El vendedor generó la comisión
+                      user_id: item.seller_id,
                       reference_id: order.id,
                       metadata: { 
                         product_id: item.product_id, 
@@ -140,26 +177,10 @@ export async function POST(req: NextRequest) {
 
             // --- A. Email al Comprador (Resumen de Pago) ---
             if (buyerEmail) {
-              const itemsWithTokens = [];
-              for (const p of fullProducts) {
-                const { data: savedItem } = await supabaseAdmin
-                  .from('order_items')
-                  .select('id')
-                  .eq('product_id', p.id)
-                  .eq('order_id', order?.id || '')
-                  .single();
-                
-                const token = savedItem ? generateConfirmToken(savedItem.id, order!.id) : '';
-                itemsWithTokens.push({ ...p, token });
-              }
-
               const itemsHtml = fullProducts.map(p => {
                 return `
                   <li style="margin-bottom: 20px; padding: 15px; border-left: 4px solid #D4A373; background: #fff; border-radius: 8px;">
                     <strong>${p.brand || ''} ${p.title}</strong> - S/ ${p.price}<br/>
-                    <p style="font-size: 11px; color: #666; margin-top: 8px;">
-                      Te enviaremos los enlaces para confirmar la recepción una vez que el vendedor marque el producto como enviado.
-                    </p>
                   </li>
                 `;
               }).join('');
@@ -175,17 +196,24 @@ export async function POST(req: NextRequest) {
                       <h3 style="margin-top: 0; color: #4a5d4e;">Resumen del Pedido:</h3>
                       <ul style="padding-left: 0; list-style: none;">
                         ${itemsHtml}
+                        <li style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #D4A373;">
+                          <strong>Envío:</strong> S/ ${shippingFee.toFixed(2)}
+                        </li>
                       </ul>
                       <p style="font-size: 18px; font-weight: bold; border-top: 1px solid #e0dcd0; pt: 10px;">Total Pago: S/ ${paymentData.transaction_amount}</p>
                     </div>
-                    <p style="font-size: 14px; color: #666;">Tu dinero está seguro en <strong>fideicomiso</strong>. Solo lo liberaremos al vendedor una vez que confirmes que recibiste tu prenda en perfecto estado.</p>
-                    <p style="text-align: center; margin-top: 30px; font-size: 12px; color: #999;">Equipo de Moda Circular Luxury</p>
+                    <div style="background: #fff; padding: 15px; border: 1px solid #eee; border-radius: 10px;">
+                      <strong>Dirección de Entrega:</strong><br/>
+                      ${shippingAddress}<br/>
+                      ${shippingDistrict}, ${shippingProvince}, ${shippingDepartment}
+                    </div>
+                    <p style="font-size: 14px; color: #666; margin-top: 20px;">Tu dinero está seguro en <strong>fideicomiso</strong>. Solo lo liberaremos al vendedor una vez que confirmes que recibiste tu prenda.</p>
                   </div>
                 `
               }).catch(e => console.error("[Webhook Email Buyer Error]:", e));
             }
 
-            // --- B. Emails a los Vendedores (Uno por cada seller_id único) ---
+            // --- B. Emails a los Vendedores ---
             const sellersMap = new Map();
             fullProducts.forEach(p => {
               if (!sellersMap.has(p.seller_id)) {
@@ -202,25 +230,28 @@ export async function POST(req: NextRequest) {
               if (sellerInfo.email) {
                 const sellerItemsHtml = sellerInfo.items.map((p: any) => `<li>${p.title} - S/ ${p.price}</li>`).join('');
                 const sellerTotal = sellerInfo.items.reduce((sum: number, p: any) => sum + p.price, 0);
+                const sellerShipping = sellersInOrder.length === 1 ? shippingFee : 0;
 
                 await sendEmail({
                   to: [{ email: sellerInfo.email, name: sellerInfo.name }],
-                  subject: `🔔 ¡Venta Realizada! Has vendido ${sellerInfo.items.length} prenda(s)`,
+                  subject: `🔔 ¡Venta Realizada! Prepara tu envío para ${buyerName}`,
                   htmlContent: `
                     <div style="font-family: serif; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0dcd0; border-radius: 20px;">
                       <h2 style="color: #4a5d4e;">¡Felicidades, ${sellerInfo.name}!</h2>
-                      <p>Has realizado una venta exitosa en <strong>Moda Circular</strong>.</p>
+                      <p>Has realizado una venta exitosa.</p>
                       <div style="background: #fdfaf6; padding: 15px; border-radius: 10px; margin: 20px 0;">
-                        <strong>Prendas vendidas:</strong>
-                        <ul style="margin: 10px 0; padding-left: 20px;">${sellerItemsHtml}</ul>
-                        <p><strong>Total Bruto:</strong> S/ ${sellerTotal.toFixed(2)}</p>
+                        <strong>Datos de Envío:</strong><br/>
+                        Destinatario: ${shippingName}<br/>
+                        Teléfono: ${shippingPhone}<br/>
+                        Dirección: ${shippingAddress}<br/>
+                        Ubigeo: ${shippingDistrict}, ${shippingProvince}, ${shippingDepartment}
                       </div>
-                      <p><strong>Próximos pasos:</strong></p>
-                      <ol style="font-size: 14px; line-height: 1.6;">
-                        <li>Prepara el paquete con el cuidado habitual.</li>
-                        <li>Realiza el envío al comprador: <strong>${buyerName}</strong> (${buyerEmail || 'Ver en panel'}).</li>
-                        <li>Ingresa a tu <strong>Perfil > Mi Inventario</strong> y marca la prenda como <strong>"Enviada"</strong> para notificar al comprador y agilizar la liberación de tus fondos.</li>
-                      </ol>
+                      <div style="background: #fff; padding: 15px; border: 1px solid #eee; border-radius: 10px; margin: 20px 0;">
+                        <strong>Resumen Financiero:</strong><br/>
+                        Productos: S/ ${sellerTotal.toFixed(2)}<br/>
+                        Envío recolectado: S/ ${sellerShipping.toFixed(2)}<br/>
+                        <small>Tu pago final (Escrow) incluirá el monto del envío para que gestiones el courier.</small>
+                      </div>
                     </div>
                   `
                 }).catch(e => console.error(`[Webhook Email Seller ${sellerId} Error]:`, e));

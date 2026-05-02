@@ -30,8 +30,8 @@ export async function processEscrowRelease(itemId: string) {
       return { success: true }; // Ya fue procesado exitosamente
     }
 
-    if (item.status !== 'pending') {
-      return { success: false, error: `El ítem ${itemId} no está en estado 'pending' (Estado actual: ${item.status}).` };
+    if (item.status !== 'pending' && item.status !== 'shipped') {
+      return { success: false, error: `El ítem ${itemId} no está en un estado válido para liberación (Estado actual: ${item.status}).` };
     }
     
     if (item.payout_released) {
@@ -56,14 +56,14 @@ export async function processEscrowRelease(itemId: string) {
         payout_released: true 
       })
       .eq('id', itemId)
-      .eq('status', 'pending');
+      .in('status', ['pending', 'shipped']);
 
     if (updateErr) {
       throw new Error(`Error al actualizar estado del ítem: ${updateErr.message}`);
     }
 
     if (count === 0) {
-      // Si count es 0 significa que no se cumplió la condición .eq('status', 'pending')
+      // Si count es 0 significa que no se cumplió la condición .in('status', ['pending', 'shipped'])
       // Verificamos si es porque ya está completed
       const { data: currentItem } = await supabaseAdmin
         .from('order_items')

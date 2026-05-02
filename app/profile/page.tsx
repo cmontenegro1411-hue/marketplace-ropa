@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { auth } from "@/auth";
 import { WalletHistory } from "@/components/profile/WalletHistory";
+import { PurchaseHistory } from "@/components/profile/PurchaseHistory";
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -44,11 +45,11 @@ export default async function ProfilePage() {
   const balanceAvailable = userData?.balance_available || 0;
 
   // Obtener mis compras (donde soy el comprador)
-  /* const { data: myPurchases } = await supabase
-    .from('products')
-    .select('*')
-    .eq('buyer_email', session.user.email)
-    .order('created_at', { ascending: false }); */
+  const { data: myPurchases } = await supabaseAdmin
+    .from('order_items')
+    .select('*, products(*), orders!inner(*), product_reviews(id)')
+    .eq('orders.buyer_id', session.user.id)
+    .order('created_at', { ascending: false });
 
   // Obtener historial de billetera
   const { data: walletTransactions } = await supabase
@@ -169,7 +170,37 @@ export default async function ProfilePage() {
         </div>
 
         {/* Listings Section (Client side Tabs) */}
-        <ProfileInventory products={myProducts || []} />
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-primary">Mi Closet</h2>
+              <p className="text-xs text-muted font-medium">Gestiona tus prendas en venta y vendidas</p>
+            </div>
+          </div>
+          <ProfileInventory products={myProducts || []} />
+        </div>
+
+        {/* Purchases Section */}
+        <div className="mt-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-primary">Mis Compras</h2>
+              <p className="text-xs text-muted font-medium">Seguimiento de tus adquisiciones y reseñas</p>
+            </div>
+          </div>
+          <PurchaseHistory purchases={myPurchases || []} />
+        </div>
 
         {/* Wallet History Section */}
         <div className="mt-16">

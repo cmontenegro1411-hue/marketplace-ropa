@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { CartProvider } from "@/context/CartContext";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -33,13 +34,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${playfair.variable} ${outfit.variable} antialiased`}
       >
         <AuthProvider>
           <CartProvider>
             {children}
+            <Toaster position="top-right" expand={false} richColors />
           </CartProvider>
         </AuthProvider>
       </body>

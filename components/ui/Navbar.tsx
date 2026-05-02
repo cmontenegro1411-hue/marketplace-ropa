@@ -112,7 +112,7 @@ export const Navbar = () => {
                     {suggestions.length > 0 ? (
                       <div className="p-2">
                         {suggestions.map((item) => (
-                          <Link key={item.id} href={`/product/${item.id}`} onClick={() => setIsSearchOpen(false)} className="flex items-center gap-4 p-3 hover:bg-cream rounded-xl transition-colors">
+                          <Link key={item.id} href={`/products/${item.id}`} onClick={() => setIsSearchOpen(false)} className="flex items-center gap-4 p-3 hover:bg-cream rounded-xl transition-colors">
                             <div className="w-10 h-10 bg-sand/30 rounded overflow-hidden">
                               <img src={item.images?.[0] || '/placeholder.png'} alt={item.title} className="w-full h-full object-cover" />
                             </div>

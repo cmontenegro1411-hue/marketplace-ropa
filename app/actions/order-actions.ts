@@ -29,7 +29,7 @@ export async function confirmItemReception(token: string) {
     // Obtener el product_id para actualizar el estado del producto
     const { data: orderItem } = await supabaseAdmin
       .from('order_items')
-      .select('product_id')
+      .select('product_id, seller_id')
       .eq('id', itemId)
       .single();
 
@@ -48,7 +48,15 @@ export async function confirmItemReception(token: string) {
     revalidatePath('/search');
     revalidatePath('/profile');
     revalidatePath('/dashboard/admin/vendedores');
-    return { success: true };
+    
+    return { 
+      success: true,
+      orderItem: {
+        id: itemId,
+        productId: orderItem?.product_id,
+        sellerId: orderItem?.seller_id
+      }
+    };
   } catch (error: any) {
     console.error("confirmItemReception Error:", error);
     return { success: false, error: error.message };
@@ -66,7 +74,7 @@ export async function getOrderItemStatus(token: string) {
     const { itemId } = decoded;
     const { data: item, error } = await supabaseAdmin
       .from('order_items')
-      .select('status, products(title, brand)')
+      .select('status, product_id, seller_id, products(title, brand)')
       .eq('id', itemId)
       .single();
 
@@ -75,6 +83,11 @@ export async function getOrderItemStatus(token: string) {
     return { 
       success: true, 
       status: item.status,
+      orderItem: {
+        id: itemId,
+        productId: item.product_id,
+        sellerId: item.seller_id
+      },
       product: {
         title: (item.products as any).title,
         brand: (item.products as any).brand
@@ -105,7 +118,7 @@ export async function disputeOrderItem(token: string) {
 
     if (fetchErr) return { success: false, error: `Error al buscar el ítem: ${fetchErr.message}` };
     if (!item) return { success: false, error: "Ítem no encontrado." };
-    if (item.status !== 'pending') return { success: false, error: "Ya existe una acción sobre este ítem." };
+    if (item.status !== 'pending' && item.status !== 'shipped') return { success: false, error: "Ya existe una acción sobre este ítem." };
 
     // 1. Cambiar estado a disputed
     await supabaseAdmin

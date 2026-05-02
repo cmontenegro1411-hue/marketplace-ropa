@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0; 
+export const fetchCache = 'force-no-store';
 
 export default async function AdminCRMPage() {
   // 1. Obtener todas las órdenes
@@ -40,10 +42,11 @@ export default async function AdminCRMPage() {
     .select('*', { count: 'exact', head: true })
     .eq('role', 'seller');
 
-  // Métricas Principales
+  // Métricas Principales - CRÍTICO: Solo Ventas CONFIRMADAS por el comprador ('completed')
+  // No se suma nada que esté en 'pending', 'shipped' o 'disputed'.
   const totalSalesValue = ordersData?.reduce((acc, order) => {
     const validItemsPrice = order.order_items?.reduce((sum: number, item: any) => {
-      if (['pending', 'shipped', 'completed'].includes(item.status)) {
+      if (item.status === 'completed') {
         return sum + (item.price || 0);
       }
       return sum;
@@ -51,21 +54,21 @@ export default async function AdminCRMPage() {
     return acc + validItemsPrice;
   }, 0) || 0;
 
-  const pendingOrdersCount = ordersData?.filter((order: any) => {
-    if (order.payment_status === 'pendiente') return true;
-    if (order.payment_status === 'completed') {
-      return order.order_items?.some((item: any) => item.status === 'pending' || item.status === 'shipped');
-    }
-    return false;
-  }).length || 0;
+  // Items en Escrow - Conteo de prendas que están en camino o pendientes de confirmación
+  const pendingItemsCount = ordersData?.reduce((acc, order) => {
+    const itemsInEscrow = order.order_items?.filter((item: any) => 
+      item.status === 'pending' || item.status === 'shipped'
+    ).length || 0;
+    return acc + itemsInEscrow;
+  }, 0) || 0;
 
   // --- Lógica de Rankings ---
 
-  // Ranking Vendedores
+  // Ranking Vendedores - Solo Ventas Confirmadas ('completed')
   const sellerMap = new Map();
   ordersData?.forEach(order => {
     order.order_items?.forEach((item: any) => {
-      if (['pending', 'shipped', 'completed'].includes(item.status)) {
+      if (item.status === 'completed') {
         const sellerName = item.products?.users?.name || 'Desconocido';
         const current = sellerMap.get(item.seller_id) || { name: sellerName, total: 0, items: 0 };
         sellerMap.set(item.seller_id, {
@@ -88,9 +91,9 @@ export default async function AdminCRMPage() {
     const rawEmail = order.buyer_email || 'anónimo';
     const emailKey = rawEmail.toLowerCase().trim();
     
-    // Solo contar el monto de ítems válidos (excluyendo devueltos/cancelados)
+    // Solo contar el monto de ítems completados para el ranking de gasto
     const validOrderTotal = order.order_items?.reduce((sum: number, item: any) => {
-      if (['pending', 'shipped', 'completed'].includes(item.status)) return sum + (item.price || 0);
+      if (item.status === 'completed') return sum + (item.price || 0);
       return sum;
     }, 0) || 0;
 
@@ -168,7 +171,7 @@ export default async function AdminCRMPage() {
               <Clock size={20} />
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Items en Escrow</span>
             </div>
-            <div className="text-3xl md:text-4xl font-serif font-bold text-primary">{pendingOrdersCount || 0}</div>
+            <div className="text-3xl md:text-4xl font-serif font-bold text-primary">{pendingItemsCount || 0}</div>
             <p className="text-[10px] text-muted mt-2 font-bold uppercase tracking-tight">Por confirmar recibo</p>
           </div>
         </div>

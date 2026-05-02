@@ -6,6 +6,7 @@ export const revalidate = 0;
 import Link from 'next/link';
 import { supabase } from "@/lib/supabase";
 import { ProductCard } from "@/components/ui/ProductCard";
+import { getSellersReputations } from "@/app/actions/reputation-actions";
 
 
 
@@ -25,6 +26,8 @@ export default async function Home() {
   }
 
   const latestProducts = await getLatestProducts();
+  const sellerIds = latestProducts.map(p => p.seller_id).filter(Boolean) as string[];
+  const reputations = await getSellersReputations(sellerIds);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -98,6 +101,8 @@ export default async function Home() {
                     size={p.size}
                     imageUrl={p.images?.[0] || '/placeholder-product.png'}
                     status={p.status}
+                    sellerRating={reputations[p.seller_id]?.rating}
+                    sellerReviewCount={reputations[p.seller_id]?.reviewCount}
                   />
                 ))}
               </div>

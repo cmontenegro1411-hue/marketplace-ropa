@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     // 💡 REMOVEMOS el bloqueo de auth porque permitiremos el Guest Checkout para compradores.
     
-    const { items, buyerInfo } = await req.json();
+    const { items, buyerInfo, shippingFee } = await req.json();
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'El carrito está vacío' }, { status: 400 });
@@ -28,24 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Productos no encontrados en la Base de Datos.' }, { status: 404 });
     }
 
-    // Ya no exigimos que el vendedor tenga mp_user_id porque en este MVP Escrow, 
-    // todo el pago se va hacia el MP_ACCESS_TOKEN de la plataforma principal (Antigravity).
-    const mainSeller = products[0].users;
-    if (!mainSeller) {
-      console.warn('Producto huérfano (sin vendedor asignado en BD)');
-    }
-
-    // 2. Calcular Comisiones (Escrow Setup)
-    // - S/ 2 fixed fee if ai_usage_type is 'on_demand'
-    // - 5% platform fee (ejemplo)
-    let _totalMarketplaceFee = 0;
+    // 2. Calcular Comisiones y preparar items
     const preferenceItems = products.map(p => {
-      let itemFee = p.price * 0.10; // 10% plataforma base
-      if (p.ai_usage_type === 'on_demand') {
-        itemFee += 2; // S/ 2 por uso de IA
-      }
-      _totalMarketplaceFee += itemFee;
-
       return {
         id: p.id,
         title: p.title,
@@ -54,6 +38,17 @@ export async function POST(req: NextRequest) {
         currency_id: 'PEN'
       };
     });
+
+    // Agregar costo de envío si existe
+    if (shippingFee && shippingFee > 0) {
+      preferenceItems.push({
+        id: 'shipping_fee',
+        title: 'Costo de Envío (Logística)',
+        unit_price: shippingFee,
+        quantity: 1,
+        currency_id: 'PEN'
+      });
+    }
 
     const client = new MercadoPagoConfig({ 
       accessToken: process.env.MP_ACCESS_TOKEN || '' 
@@ -83,6 +78,14 @@ export async function POST(req: NextRequest) {
           buyerName: buyerInfo.name,
           buyerPhone: buyerInfo.buyer_phone,
           productIds: productIds,
+          shippingFee: shippingFee,
+          shippingName: buyerInfo.shipping_name,
+          shippingAddress: buyerInfo.shipping_address,
+          shippingUbigeo: buyerInfo.shipping_ubigeo,
+          shippingDepartment: buyerInfo.shipping_department,
+          shippingProvince: buyerInfo.shipping_province,
+          shippingDistrict: buyerInfo.shipping_district,
+          shippingPhone: buyerInfo.shipping_phone,
           type: 'clothing_escrow'
         }),
       }

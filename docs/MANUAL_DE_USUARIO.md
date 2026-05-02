@@ -5,7 +5,9 @@ Bienvenido al manual oficial de la plataforma. Este documento detalla cómo util
 ## 🛍️ Para Compradores
 1. **Búsqueda**: Utiliza el grid de búsqueda para filtrar prendas por categoría y estado.
 2. **Compra**: Al confirmar un pedido, recibirás los datos de contacto del vendedor (WhatsApp) para coordinar la entrega.
-3. **Estado**: Las prendas marcadas como "Vendido" no pueden ser añadidas al carrito.
+3. **Privacidad**: Cuando el comprador deja una opinión o reseña sobre el vendedor, el sistema garantiza el anonimato mostrando únicamente el primer nombre del comprador (jamás el nombre completo ni un identificador genérico).
+4. **Confirmación de Recepción**: El comprador puede confirmar que recibió su pedido correctamente a través del enlace enviado a su correo. Esta confirmación es posible y está habilitada incluso cuando el vendedor ya ha marcado el envío como "En Camino" (`shipped`).
+5. **Estado**: Las prendas marcadas como "Vendido" no pueden ser añadidas al carrito.
 
 ## 👗 Para Vendedores (Modo Business)
 

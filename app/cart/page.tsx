@@ -52,7 +52,7 @@ export default function CartPage() {
                     </div>
                     <div className="flex justify-between items-end">
                       <span className="text-2xl font-serif font-bold text-primary">S/ {item.price.toLocaleString()}</span>
-                      <Link href={`/product/${item.id}`} className="text-[10px] font-bold uppercase tracking-widest text-secondary hover:underline">Ver detalle</Link>
+                      <Link href={`/products/${item.id}`} className="text-[10px] font-bold uppercase tracking-widest text-secondary hover:underline">Ver detalle</Link>
                     </div>
                   </div>
                 </div>
@@ -72,13 +72,16 @@ export default function CartPage() {
                     <span className="text-muted">Subtotal</span>
                     <span className="font-bold text-primary">S/ {totalPrice.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="text-muted">Envío</span>
-                    <span className="text-green-600 font-bold uppercase text-[10px] tracking-widest">Gratis</span>
+                    <span className="text-primary font-medium italic text-[11px] tracking-tight">Calculado al pagar</span>
                   </div>
                   <div className="pt-4 border-t border-sand flex justify-between items-baseline">
-                    <span className="text-lg font-bold text-primary">Total</span>
-                    <span className="text-3xl font-serif font-bold text-primary">S/ {totalPrice.toLocaleString()}</span>
+                    <span className="text-lg font-bold text-primary">Subtotal</span>
+                    <div className="text-right">
+                      <span className="text-3xl font-serif font-bold text-primary">S/ {totalPrice.toLocaleString()}</span>
+                      <p className="text-[10px] text-muted uppercase tracking-widest mt-1">+ costo de envío</p>
+                    </div>
                   </div>
                 </div>
 

@@ -5,6 +5,7 @@ import { CheckCircle2, Package, ShieldCheck, AlertCircle, Loader2, ArrowRight, H
 import { confirmItemReception, getOrderItemStatus } from '@/app/actions/order-actions';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { ReviewForm } from '@/components/reviews/ReviewForm';
 
 export default function ConfirmReceptionPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -13,17 +14,25 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
   const [product, setProduct] = useState<{ title: string; brand: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
+  const [metadata, setMetadata] = useState<{ productId: string; itemId: string; sellerId: string } | null>(null);
 
   const checkStatus = async () => {
     setStatus('loading');
     try {
       const result = await getOrderItemStatus(token);
       if (result.success) {
-        if (result.product) setProduct(result.product);
+        if ('orderItem' in result && result.orderItem) {
+          const item = (result as any).orderItem;
+          setMetadata({
+            productId: item.productId as string,
+            itemId: item.id,
+            sellerId: item.sellerId as string
+          });
+        }
         
         if (result.status === 'completed') {
           setStatus('success');
-        } else if (result.status === 'pending') {
+        } else if (result.status === 'pending' || result.status === 'shipped') {
           setStatus('ready');
         } else {
           setStatus('error');
@@ -31,7 +40,8 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
         }
       } else {
         setStatus('error');
-        setErrorMessage(result.error || 'Enlace inválido o expirado.');
+        const errorMsg = 'error' in result ? (result as any).error : '';
+        setErrorMessage(errorMsg || 'Enlace inválido o expirado.');
       }
     } catch (err) {
       setStatus('error');
@@ -52,15 +62,25 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
     try {
       const result = await confirmItemReception(token);
       
+      
       if (result.success) {
+        if ('orderItem' in result && result.orderItem) {
+          const item = (result as any).orderItem;
+          setMetadata({
+            productId: item.productId as string,
+            itemId: item.id,
+            sellerId: item.sellerId as string
+          });
+        }
         setStatus('success');
       } else {
+        const errorMsg = 'error' in result ? (result as any).error : '';
         // Si el error es porque ya estaba completado, lo tratamos como éxito
-        if (result.error?.includes('ya ha sido procesado') || result.error?.includes('completed')) {
+        if (errorMsg?.includes('ya ha sido procesado') || errorMsg?.includes('completed')) {
           setStatus('success');
         } else {
           setStatus('error');
-          setErrorMessage(result.error || 'No pudimos procesar la confirmación.');
+          setErrorMessage(errorMsg || 'No pudimos procesar la confirmación.');
         }
       }
     } catch (_err) {
@@ -158,10 +178,20 @@ export default function ConfirmReceptionPage({ params }: { params: Promise<{ tok
                 La recepción ha sido confirmada satisfactoriamente. El vendedor recibirá sus fondos pronto. ¡Gracias por circular moda!
               </p>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {metadata?.productId && (
+                  <div className="mt-4 border-t border-gray-100 pt-6 animate-in slide-in-from-bottom-2 duration-700 delay-300 fill-mode-both">
+                    <ReviewForm 
+                      productId={metadata.productId} 
+                      token={token} 
+                      productName={product ? `${product.brand} ${product.title}` : undefined} 
+                    />
+                  </div>
+                )}
+
                 <Link 
                   href="/"
-                  className="w-full py-4 bg-primary text-cream rounded-full text-sm font-bold uppercase tracking-widest shadow-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-primary/10 text-primary rounded-full text-sm font-bold uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
                 >
                   <Home className="w-4 h-4" />
                   Ir al Inicio

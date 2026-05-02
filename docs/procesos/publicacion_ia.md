@@ -19,10 +19,10 @@
 **3. Paso: Análisis por IA (Vision)**
 - **Descripción**: El sistema envía la imagen principal a un servicio de IA para detectar atributos.
 - **Entradas**: Imagen principal.
-- **Salidas**: Categoría sugerida, marca detectada, color predominante, estado visual, título sugerido.
+- **Salidas**: Categoría sugerida, género, marca detectada, color predominante, estado visual, título sugerido.
 - **Decisiones**: Si la IA no está segura de la marca, deja el campo vacío para el usuario.
 - **Excepciones**: Error en el servicio de IA, imagen no procesable (borrosa o inapropiada).
-- **Validaciones**: Moderación automática para contenido prohibido.
+- **Validaciones**: Moderación automática para contenido prohibido. Regla estricta de género: La IA debe priorizar "Mujer" u "Hombre" analizando el corte de la prenda, y tiene PROHIBIDO usar "Unisex" como comodín, reservándolo únicamente para accesorios verdaderamente neutros (gorras, mochilas lisas).
 
 **4. Paso: Sugerencia de Precio**
 - **Descripción**: Basado en los atributos detectados y artículos similares vendidos, la IA sugiere un rango de precio competitivo.

@@ -98,8 +98,9 @@ export default async function AdminSalesPage() {
                   </td>
                   <td className="px-8 py-6 align-top">
                     {(() => {
+                      // Solo sumar montos de prendas CONFIRMADAS ('completed') por el comprador
                       const effectiveTotal = order.order_items?.reduce((sum: number, item: any) => {
-                        if (item.status !== 'refunded' && item.status !== 'cancelled') {
+                        if (item.status === 'completed') {
                           return sum + (item.price || 0);
                         }
                         return sum;
@@ -190,8 +191,9 @@ export default async function AdminSalesPage() {
         {/* Vista Móvil (Cards) */}
         <div className="lg:hidden divide-y divide-sand/20">
           {orders?.map((order: any) => {
+             // Solo sumar montos de prendas CONFIRMADAS ('completed')
              const effectiveTotal = order.order_items?.reduce((sum: number, item: any) => {
-               if (item.status !== 'refunded' && item.status !== 'cancelled') {
+               if (item.status === 'completed') {
                  return sum + (item.price || 0);
                }
                return sum;
@@ -209,11 +211,13 @@ export default async function AdminSalesPage() {
                    </div>
                    {(() => {
                         const allRefunded = order.payment_status === 'refunded' || (order.order_items?.length > 0 && order.order_items?.every((it: any) => it.status === 'refunded' || it.status === 'cancelled'));
+                        const someRefunded = order.order_items?.some((it: any) => it.status === 'refunded' || it.status === 'cancelled');
                         const hasDispute = order.order_items?.some((it: any) => it.status === 'disputed');
                         const isPending = order.payment_status === 'completed' && order.order_items?.some((it: any) => it.status === 'pending' || it.status === 'shipped');
 
                         if (allRefunded) return <span className="text-[8px] font-bold bg-red-50 text-red-500 px-2 py-1 rounded-full border border-red-100 uppercase tracking-widest">Reembolsado</span>;
                         if (hasDispute) return <span className="text-[8px] font-bold bg-orange-50 text-orange-600 px-2 py-1 rounded-full border border-orange-100 uppercase tracking-widest">Disputa</span>;
+                        if (someRefunded) return <span className="text-[8px] font-bold bg-amber-50 text-amber-600 px-2 py-1 rounded-full border border-amber-100 uppercase tracking-widest">P. Refund</span>;
                         if (isPending) return <span className="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-full border border-blue-100 uppercase tracking-widest">En Camino</span>;
                         if (order.payment_status === 'completed') return <span className="text-[8px] font-bold bg-[#00E0A6]/10 text-[#008F6A] px-2 py-1 rounded-full uppercase tracking-widest">OK</span>;
                         return <span className="text-[8px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-full uppercase tracking-widest">Pend.</span>;
@@ -234,19 +238,33 @@ export default async function AdminSalesPage() {
                  <div className="space-y-3">
                     <p className="text-[9px] text-muted font-bold uppercase tracking-tight">Artículos</p>
                     {order.order_items?.map((item: any) => (
-                        <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-sand/10 shadow-sm">
-                            <div className="max-w-[70%]">
-                                <p className="text-[11px] font-bold text-primary leading-tight">
-                                    {item.products?.brand} {item.products?.title}
-                                </p>
-                                <p className="text-[9px] text-accent font-bold uppercase tracking-tighter mt-0.5">
-                                    Vend. {item.products?.users?.name || '??'}
-                                </p>
+                        <div key={item.id} className="flex flex-col bg-white p-4 rounded-2xl border border-sand/10 shadow-sm gap-3">
+                            <div className="flex justify-between items-start gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[11px] font-bold text-primary leading-tight truncate">
+                                        {item.products?.brand} {item.products?.title}
+                                    </p>
+                                    <p className="text-[9px] text-accent font-bold uppercase tracking-tighter mt-1">
+                                        Vend. {item.products?.users?.name || '??'}
+                                    </p>
+                                </div>
+                                <p className="text-xs font-bold text-primary whitespace-nowrap">S/ {item.price}</p>
                             </div>
-                            <div className="text-right">
-                                <p className="text-xs font-bold text-primary leading-none">S/ {item.price}</p>
-                                {item.status === 'refunded' && <p className="text-[8px] text-red-500 font-bold uppercase mt-1">Ref.</p>}
-                                {item.status === 'disputed' && <p className="text-[8px] text-orange-500 font-bold uppercase mt-1">Disp.</p>}
+                            
+                            {/* Item status badge in mobile */}
+                            <div>
+                                {(() => {
+                                  const s = item.status;
+                                  if (s === 'refunded' || s === 'cancelled') 
+                                    return <span className="text-[8px] font-bold bg-red-50 text-red-500 px-2 py-1 rounded-md border border-red-100 uppercase tracking-tighter">Reembolsado</span>;
+                                  if (s === 'disputed')
+                                    return <span className="text-[8px] font-bold bg-orange-50 text-orange-600 px-2 py-1 rounded-md border border-orange-100 uppercase tracking-tighter">Disputa</span>;
+                                  if (s === 'shipped')
+                                    return <span className="text-[8px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100 uppercase tracking-tighter">Enviado</span>;
+                                  if (s === 'completed')
+                                    return <span className="text-[8px] font-bold bg-[#00E0A6]/10 text-[#008F6A] px-2 py-1 rounded-md border border-[#00E0A6]/20 uppercase tracking-tighter">Completado</span>;
+                                  return <span className="text-[8px] font-bold bg-amber-50 text-amber-600 px-2 py-1 rounded-md border border-amber-100 uppercase tracking-tighter">Pendiente</span>;
+                                })()}
                             </div>
                         </div>
                     ))}

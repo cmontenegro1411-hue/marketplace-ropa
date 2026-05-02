@@ -73,6 +73,19 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
   const router = useRouter();
   const [form, setForm] = useState<AIResult>({ ...result });
   const [size, setSize] = useState('');
+  const detectMacroCat = (tipo: string) => {
+    tipo = (tipo || '').toLowerCase();
+    if (tipo.includes('zapat') || tipo.includes('bot') || tipo.includes('sandalia') || tipo.includes('calzado') || tipo.includes('sneaker') || tipo.includes('tacón') || tipo.includes('tacon')) return 'Calzado';
+    if (tipo.includes('bols') || tipo.includes('cartera') || tipo.includes('lente') || tipo.includes('cinturón') || tipo.includes('reloj') || tipo.includes('collar') || tipo.includes('sombrero') || tipo.includes('accesorio') || tipo.includes('joya') || tipo.includes('mochila') || tipo.includes('gorra') || tipo.includes('billetera')) return 'Accesorios';
+    return 'Ropa';
+  };
+
+  const [macroCat, setMacroCat] = useState(() => detectMacroCat(result.tipo_prenda));
+
+  // Sync macroCat if result changes (e.g. fast remounts without losing state)
+  useEffect(() => {
+    setMacroCat(detectMacroCat(result.tipo_prenda));
+  }, [result.tipo_prenda]);
   const [newHashtag, setNewHashtag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -223,7 +236,7 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
       const res = await createListing({
         title:       form.titulo,
         brand:       form.marca || 'Sin marca',
-        category:    form.categoria,
+        category:    `${form.categoria} | ${macroCat}`,
         condition:   CONDITION_MAP[form.condicion] || form.condicion,
         size:        size || 'Única',
         description: form.descripcion,
@@ -274,7 +287,7 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
         />
 
         {/* Marca y Categoría */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Marca</label>
             <div className="flex items-center gap-2">
@@ -306,8 +319,11 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
               className="w-full bg-cream/30 border border-sand rounded-xl px-3 py-2.5 text-sm focus:border-primary outline-none"
             />
           </div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Categoría</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Público</label>
             <select
               value={form.categoria}
               onChange={(e) => updateField('categoria', e.target.value)}
@@ -319,11 +335,24 @@ export const ListingResult = ({ result, imageFile, onReset, aiUsageType }: Listi
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Tipo de Prenda</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Tipo de Artículo</label>
+            <select
+              value={macroCat}
+              onChange={(e) => setMacroCat(e.target.value)}
+              className="w-full bg-cream/30 border border-sand rounded-xl px-3 py-2.5 text-sm focus:border-primary outline-none appearance-none"
+            >
+              <option value="Ropa">Ropa</option>
+              <option value="Calzado">Calzado</option>
+              <option value="Accesorios">Accesorios</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Subcategoría</label>
             <input
               type="text"
               value={form.tipo_prenda}
               onChange={(e) => updateField('tipo_prenda', e.target.value)}
+              placeholder="Ej: Zapatillas, Camiseta"
               className="w-full bg-cream/30 border border-sand rounded-xl px-3 py-2.5 text-sm focus:border-primary outline-none"
             />
           </div>

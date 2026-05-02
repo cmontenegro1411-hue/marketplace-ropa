@@ -4,8 +4,7 @@ import { supabaseAdmin } from "./lib/supabase-admin";
 async function checkOrder() {
   const { data: orders, error } = await supabaseAdmin
     .from('orders')
-    .select('*, order_items(*, products(title))')
-    .ilike('buyer_name', '%Sebastian%');
+    .select('*, order_items(*, products(title))');
 
   if (error) {
     console.error("Error:", error);
